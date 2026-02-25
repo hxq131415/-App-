@@ -1,0 +1,10 @@
+{
+  "source_root": "./examples/sample_app",
+  "include_prefixes": ["APP", "MY"],
+  "exclude_symbols": [
+    "APPDoNotTouchClass",
+    "main"
+  ],
+  "seed": "replace-with-ci-secret-seed",
+  "output_map": "./examples/obfuscation_map.json"
+}
