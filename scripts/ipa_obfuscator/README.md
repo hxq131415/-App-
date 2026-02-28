@@ -91,3 +91,14 @@ bash scripts/ipa_obfuscator/build_obfuscated_ipa.sh \
 ```
 
 > 提示：脚本现在也支持 `-p` 直接传目录，会自动尝试拼接 `ExportOptions.plist`。
+
+
+如果你看到：
+- `The following build commands failed: Ld ...`
+
+这只是 Xcode 的汇总提示，不是根因。请看脚本输出的日志路径：
+- `.obf_build/obf_pass1.log`
+- `.obf_build/obf_pass2.log`
+- `.obf_build/obf_export.log`
+
+其中 `obf_pass2.log` 里紧邻 `Ld` 前后的具体报错（如未定义符号、重复符号、链接参数格式错误）才是最终原因。

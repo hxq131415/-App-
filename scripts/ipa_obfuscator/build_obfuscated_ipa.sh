@@ -5,6 +5,10 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 WORK_DIR="${ROOT_DIR}/.obf_build"
 mkdir -p "${WORK_DIR}"
 
+PASS1_LOG="${WORK_DIR}/obf_pass1.log"
+PASS2_LOG="${WORK_DIR}/obf_pass2.log"
+EXPORT_LOG="${WORK_DIR}/obf_export.log"
+
 usage() {
   cat <<EOF
 Usage:
@@ -26,6 +30,19 @@ Optional:
   -n  Build number tag (default: unix timestamp)
   -P  Target iOS project root directory (default: current repo root)
 EOF
+}
+
+run_step() {
+  local step="$1"
+  local logfile="$2"
+  shift 2
+  echo "[obf] ${step}..."
+  if ! "$@" >"$logfile" 2>&1; then
+    echo "[error] ${step} failed. Log: $logfile"
+    echo "[error] Last 80 lines from $logfile:"
+    tail -n 80 "$logfile" || true
+    exit 1
+  fi
 }
 
 SCHEME=""
@@ -123,8 +140,8 @@ else
 fi
 
 echo "[obf] Target root: $TARGET_ROOT"
-echo "[obf] Pass1 archive for symbol inventory..."
-xcodebuild "${XCBUILD_ARGS[@]}" -archivePath "$ARCHIVE1" clean archive >/tmp/obf_pass1.log
+run_step "Pass1 archive for symbol inventory" "$PASS1_LOG" \
+  xcodebuild "${XCBUILD_ARGS[@]}" -archivePath "$ARCHIVE1" clean archive
 
 APP_BIN="$(find "$ARCHIVE1/Products/Applications" -name "$SCHEME.app" -type d | head -n1)/$SCHEME"
 [[ -f "$APP_BIN" ]] || { echo "Unable to locate app binary in archive"; exit 1; }
@@ -135,19 +152,19 @@ for src in "${SOURCE_ROOTS[@]}"; do
 done
 
 python3 "${ROOT_DIR}/scripts/ipa_obfuscator/shuffle_macho_symbols.py" "${PY_ARGS[@]}"
+[[ -s "$ORDER_FILE" ]] || { echo "Generated empty order file: $ORDER_FILE"; exit 1; }
 
-echo "[obf] Pass2 archive with randomized layout..."
-xcodebuild "${XCBUILD_ARGS[@]}" -archivePath "$ARCHIVE2" \
-  OTHER_CFLAGS="
-  -DOBF_BUILD_SEED=\"$SEED\"" \
+run_step "Pass2 archive with randomized layout" "$PASS2_LOG" \
+  xcodebuild "${XCBUILD_ARGS[@]}" -archivePath "$ARCHIVE2" \
+  OTHER_CFLAGS="-DOBF_BUILD_SEED=$SEED" \
   OTHER_LDFLAGS="-Wl,-order_file,${ORDER_FILE}" \
-  clean archive >/tmp/obf_pass2.log
+  clean archive
 
 EXPORT_PATH="${OUT_DIR}/export-${BUILD_TAG}"
 mkdir -p "$EXPORT_PATH"
 
-echo "[obf] Exporting IPA..."
-xcodebuild -exportArchive -archivePath "$ARCHIVE2" -exportPath "$EXPORT_PATH" -exportOptionsPlist "$EXPORT_PLIST" >/tmp/obf_export.log
+run_step "Exporting IPA" "$EXPORT_LOG" \
+  xcodebuild -exportArchive -archivePath "$ARCHIVE2" -exportPath "$EXPORT_PATH" -exportOptionsPlist "$EXPORT_PLIST"
 
 IPA_PATH="$(find "$EXPORT_PATH" -name "*.ipa" | head -n1 || true)"
 [[ -n "$IPA_PATH" ]] || { echo "IPA export failed"; exit 1; }
@@ -158,4 +175,5 @@ cp "$IPA_PATH" "$FINAL_IPA"
 echo "[ok] Seed: $SEED"
 echo "[ok] Order file: $ORDER_FILE"
 echo "[ok] Noise source: $NOISE_FILE"
+echo "[ok] Logs: $PASS1_LOG | $PASS2_LOG | $EXPORT_LOG"
 echo "[ok] IPA: $FINAL_IPA"
