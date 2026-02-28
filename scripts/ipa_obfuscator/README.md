@@ -19,27 +19,45 @@
 - `build_obfuscated_ipa.sh`：主入口脚本。
 - `shuffle_macho_symbols.py`：提取符号并基于 seed 生成随机顺序与噪声源码。
 
-## 使用方式
+## 怎么调用要混淆的项目？
 
-1. 在工程里准备 `ExportOptions.plist`。
-2. 执行：
+你有两种调用方式：
+
+### 1) 在目标 iOS 工程仓库内直接调用（最常见）
 
 ```bash
 bash scripts/ipa_obfuscator/build_obfuscated_ipa.sh \
   -s YourScheme \
   -c Release \
   -t YOUR_TEAM_ID \
-  -p /path/to/ExportOptions.plist \
-  -o dist
+  -p ExportOptions.plist
 ```
 
-可选参数：
+### 2) 在“工具仓库”里调用“外部目标工程”（用 `-P`）
+
+```bash
+bash scripts/ipa_obfuscator/build_obfuscated_ipa.sh \
+  -P /path/to/TargetIOSProject \
+  -s YourScheme \
+  -c Release \
+  -t YOUR_TEAM_ID \
+  -p /path/to/TargetIOSProject/ExportOptions.plist \
+  -o /path/to/output/dist
+```
+
+`-P` 会把该目录作为目标工程根目录：
+- 自动在该目录查找 `Podfile` / `.xcworkspace` / `.xcodeproj`
+- 在该目录生成 `Obfuscation/Generated/OBFBuildNoise.m`
+- 默认扫描该目录源码生成符号扰动
+
+## 参数说明
 
 - `-w`: 指定 `.xcworkspace`
 - `-x`: 指定 `.xcodeproj`
 - `-r`: 指定源码扫描目录（可多次）
 - `-k`: padding 大小（KB）
 - `-n`: 构建 tag（默认时间戳）
+- `-P`: 指定要混淆的目标工程根目录（默认当前仓库根目录）
 
 ## 输出
 
