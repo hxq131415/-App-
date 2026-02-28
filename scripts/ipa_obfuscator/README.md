@@ -59,6 +59,7 @@ bash scripts/ipa_obfuscator/build_obfuscated_ipa.sh \
 - `-n`: 构建 tag（默认时间戳）
 - `-P`: 指定要混淆的目标工程根目录（默认当前仓库根目录）
 - `-m`: 强制给 archive 中所有 bundle id 使用同一个 provisioning profile 名称（导出签名兜底）
+- `-A`: 导出/归档时增加 `-allowProvisioningUpdates`（允许 xcodebuild 自动更新签名资源）
 
 ## 输出
 
@@ -168,3 +169,6 @@ bash scripts/ipa_obfuscator/build_obfuscated_ipa.sh \
 ```
 
 脚本会自动读取 archive 里的主 App / `.appex` bundle id，并生成 `provisioningProfiles` 映射后再导出。
+
+- 若出现 `Command line name "app-store" is deprecated`：脚本会自动把 `method: app-store` 规范化为 `app-store-connect`。
+- 若出现 `No profiles for '<bundle id>' were found`：通常是本地 profile 缓存异常或映射缺失。可先清理 `~/Library/MobileDevice/Provisioning Profiles/*.Entitlements.plist`，再用 `-m "Profile Name"` + `-A` 重试。
