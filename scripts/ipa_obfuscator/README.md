@@ -58,6 +58,7 @@ bash scripts/ipa_obfuscator/build_obfuscated_ipa.sh \
 - `-k`: padding 大小（KB）
 - `-n`: 构建 tag（默认时间戳）
 - `-P`: 指定要混淆的目标工程根目录（默认当前仓库根目录）
+- `-m`: 强制给 archive 中所有 bundle id 使用同一个 provisioning profile 名称（导出签名兜底）
 
 ## 输出
 
@@ -152,3 +153,18 @@ grep -nE "Undefined symbols|duplicate symbol|ld:|clang: error|error:" .obf_build
 - 如果你确认“profile 本身支持 iCloud”但仍报错：
   - 很可能是 `ExportOptions.plist` 的 `provisioningProfiles` 映射到了错误 profile 名称，或只给主 App 配置了 profile，遗漏了 `.appex` 扩展。
   - 新版脚本会在 export 失败时打印“有效 ExportOptions（method/signingStyle/teamID/provisioningProfiles）”和 archive 中所有 bundle id，方便逐个比对。
+
+
+当你确认 profile 支持 iCloud，但 `provisioningProfiles mapping: <empty>` 仍失败时，可直接指定 profile 名称：
+
+```bash
+bash scripts/ipa_obfuscator/build_obfuscated_ipa.sh \
+  -P "/path/to/TargetIOSProject" \
+  -s "YourScheme" \
+  -c "Release" \
+  -t "ABCDE12345" \
+  -p "/path/to/ExportOptions.plist" \
+  -m "Your iCloud Enabled Profile Name"
+```
+
+脚本会自动读取 archive 里的主 App / `.appex` bundle id，并生成 `provisioningProfiles` 映射后再导出。

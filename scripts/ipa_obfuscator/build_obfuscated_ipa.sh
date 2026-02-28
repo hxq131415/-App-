@@ -29,6 +29,7 @@ Optional:
   -k  Binary padding size in KB (default: 64)
   -n  Build number tag (default: unix timestamp)
   -P  Target iOS project root directory (default: current repo root)
+  -m  Force provisioning profile name for all archive bundle IDs (optional)
 EOF
 }
 
@@ -46,32 +47,63 @@ src = Path(sys.argv[1])
 dst = Path(sys.argv[2])
 raw = src.read_bytes()
 
-
 def normalize_obj(obj):
-    if isinstance(obj, dict):
-        # Xcode 16+ deprecates "development" in export method.
-        if obj.get("method") == "development":
-            obj["method"] = "debugging"
+    if isinstance(obj, dict) and obj.get("method") == "development":
+        obj["method"] = "debugging"
     return obj
 
-
-try:
-    obj = normalize_obj(plistlib.loads(raw))
-    with dst.open("wb") as f:
-        plistlib.dump(obj, f, fmt=plistlib.FMT_XML, sort_keys=True)
-    raise SystemExit(0)
-except Exception:
-    pass
-
-try:
-    obj = normalize_obj(json.loads(raw.decode("utf-8")))
-    with dst.open("wb") as f:
-        plistlib.dump(obj, f, fmt=plistlib.FMT_XML, sort_keys=True)
-    raise SystemExit(0)
-except Exception:
-    pass
+for parser in (
+    lambda b: plistlib.loads(b),
+    lambda b: json.loads(b.decode("utf-8")),
+):
+    try:
+        obj = normalize_obj(parser(raw))
+        with dst.open("wb") as f:
+            plistlib.dump(obj, f, fmt=plistlib.FMT_XML, sort_keys=True)
+        raise SystemExit(0)
+    except Exception:
+        pass
 
 raise SystemExit(2)
+PY
+}
+
+apply_profile_mapping() {
+  local base_plist="$1"
+  local archive_path="$2"
+  local team_id="$3"
+  local profile_name="$4"
+  local out_plist="$5"
+
+  python3 - "$base_plist" "$archive_path" "$team_id" "$profile_name" "$out_plist" <<'PY'
+import plistlib
+import sys
+from pathlib import Path
+
+base = Path(sys.argv[1])
+archive = Path(sys.argv[2])
+team_id = sys.argv[3]
+profile_name = sys.argv[4]
+out = Path(sys.argv[5])
+
+obj = plistlib.loads(base.read_bytes())
+obj["signingStyle"] = "manual"
+obj["teamID"] = team_id
+
+bundle_ids = set()
+apps = list((archive / "Products" / "Applications").glob("*.app"))
+for app in apps:
+    candidates = [app / "Info.plist"] + list(app.glob("PlugIns/*.appex/Info.plist"))
+    for info in candidates:
+        if info.exists():
+            data = plistlib.loads(info.read_bytes())
+            bid = data.get("CFBundleIdentifier")
+            if bid:
+                bundle_ids.add(bid)
+
+obj["provisioningProfiles"] = {bid: profile_name for bid in sorted(bundle_ids)}
+with out.open("wb") as f:
+    plistlib.dump(obj, f, fmt=plistlib.FMT_XML, sort_keys=True)
 PY
 }
 
@@ -95,7 +127,6 @@ EOF
 import plistlib
 import sys
 from pathlib import Path
-
 p = Path(sys.argv[1])
 obj = plistlib.loads(p.read_bytes())
 print('[hint] Effective ExportOptions:')
@@ -117,18 +148,14 @@ PY
 import plistlib
 import sys
 from pathlib import Path
-
 archive = Path(sys.argv[1])
 apps = list((archive / 'Products' / 'Applications').glob('*.app'))
-if not apps:
-    raise SystemExit(0)
-print('[hint] Bundle IDs found in archive (these all need matching signing/profile rules):')
+if apps:
+    print('[hint] Bundle IDs found in archive (these all need matching signing/profile rules):')
 for app in apps:
-    plist_candidates = [app / 'Info.plist'] + list(app.glob('PlugIns/*.appex/Info.plist'))
-    for info in plist_candidates:
+    for info in [app / 'Info.plist', *app.glob('PlugIns/*.appex/Info.plist')]:
         if info.exists():
-            data = plistlib.loads(info.read_bytes())
-            bid = data.get('CFBundleIdentifier', '<unknown>')
+            bid = plistlib.loads(info.read_bytes()).get('CFBundleIdentifier', '<unknown>')
             print(f'       - {bid}')
 PY
     fi
@@ -156,7 +183,7 @@ run_step() {
     echo "[error] Last 80 lines from $logfile:"
     tail -n 80 "$logfile" || true
     if [[ "$step" == "Exporting IPA" ]]; then
-      print_export_hints "$logfile" "$ARCHIVE2" "$EXPORT_PLIST"
+      print_export_hints "$logfile" "$ARCHIVE2" "${EFFECTIVE_EXPORT_PLIST:-$EXPORT_PLIST}"
     fi
     exit 1
   fi
@@ -174,8 +201,9 @@ PADDING_KB=64
 BUILD_TAG="$(date +%s)"
 SOURCE_ROOTS=()
 TARGET_ROOT="${ROOT_DIR}"
+PROFILE_NAME=""
 
-while getopts ":s:c:t:p:w:x:d:o:r:k:n:P:h" opt; do
+while getopts ":s:c:t:p:w:x:d:o:r:k:n:P:m:h" opt; do
   case "$opt" in
     s) SCHEME="$OPTARG" ;;
     c) CONFIG="$OPTARG" ;;
@@ -189,6 +217,7 @@ while getopts ":s:c:t:p:w:x:d:o:r:k:n:P:h" opt; do
     k) PADDING_KB="$OPTARG" ;;
     n) BUILD_TAG="$OPTARG" ;;
     P) TARGET_ROOT="$OPTARG" ;;
+    m) PROFILE_NAME="$OPTARG" ;;
     h) usage; exit 0 ;;
     :) echo "Option -$OPTARG requires an argument"; usage; exit 1 ;;
     \?) echo "Invalid option: -$OPTARG"; usage; exit 1 ;;
@@ -196,73 +225,32 @@ while getopts ":s:c:t:p:w:x:d:o:r:k:n:P:h" opt; do
 done
 
 [[ -n "$SCHEME" && -n "$CONFIG" && -n "$TEAM_ID" && -n "$EXPORT_PLIST" ]] || { usage; exit 1; }
-
 if [[ "$TEAM_ID" == *"@"* ]]; then
   echo "Invalid -t value: $TEAM_ID"
-  echo "-t expects Apple Team ID (e.g. ABCDE12345), not Apple ID email."
   exit 1
 fi
 
 TARGET_ROOT="$(cd "$TARGET_ROOT" && pwd)"
-
-if [[ ${#SOURCE_ROOTS[@]} -eq 0 ]]; then
-  SOURCE_ROOTS=("${TARGET_ROOT}")
-fi
+[[ ${#SOURCE_ROOTS[@]} -gt 0 ]] || SOURCE_ROOTS=("${TARGET_ROOT}")
 
 if [[ -z "$WORKSPACE" && -f "${TARGET_ROOT}/Podfile" ]]; then
-  if command -v pod >/dev/null 2>&1; then
-    echo "[obf] Running pod install..."
-    (cd "$TARGET_ROOT" && pod install --silent)
-  fi
+  command -v pod >/dev/null 2>&1 && (cd "$TARGET_ROOT" && pod install --silent)
   WORKSPACE="$(find "$TARGET_ROOT" -maxdepth 1 -name "*.xcworkspace" | head -n1 || true)"
 fi
-
-if [[ -z "$WORKSPACE" && -z "$PROJECT" ]]; then
-  PROJECT="$(find "$TARGET_ROOT" -maxdepth 1 -name "*.xcodeproj" | head -n1 || true)"
-fi
-
+[[ -n "$WORKSPACE" || -n "$PROJECT" ]] || PROJECT="$(find "$TARGET_ROOT" -maxdepth 1 -name "*.xcodeproj" | head -n1 || true)"
 [[ -n "$WORKSPACE" || -n "$PROJECT" ]] || { echo "No workspace/project found under: $TARGET_ROOT"; exit 1; }
 
-if [[ -d "$EXPORT_PLIST" ]]; then
-  EXPORT_PLIST="${EXPORT_PLIST%/}/ExportOptions.plist"
-fi
+[[ -d "$EXPORT_PLIST" ]] && EXPORT_PLIST="${EXPORT_PLIST%/}/ExportOptions.plist"
 if [[ ! -f "$EXPORT_PLIST" ]]; then
-  if [[ -d "${TARGET_ROOT}/${EXPORT_PLIST}" ]]; then
-    EXPORT_PLIST="${TARGET_ROOT}/${EXPORT_PLIST%/}/ExportOptions.plist"
-  elif [[ -f "${TARGET_ROOT}/${EXPORT_PLIST}" ]]; then
-    EXPORT_PLIST="${TARGET_ROOT}/${EXPORT_PLIST}"
-  fi
+  [[ -d "${TARGET_ROOT}/${EXPORT_PLIST}" ]] && EXPORT_PLIST="${TARGET_ROOT}/${EXPORT_PLIST%/}/ExportOptions.plist"
+  [[ -f "${TARGET_ROOT}/${EXPORT_PLIST}" ]] && EXPORT_PLIST="${TARGET_ROOT}/${EXPORT_PLIST}"
 fi
-[[ -f "$EXPORT_PLIST" ]] || {
-  echo "ExportOptions.plist not found: $EXPORT_PLIST"
-  echo "Tip: pass file path, not directory. Example: -p /path/to/ExportOptions.plist"
-  exit 1
-}
+[[ -f "$EXPORT_PLIST" ]] || { echo "ExportOptions.plist not found: $EXPORT_PLIST"; exit 1; }
 
 mkdir -p "$OUT_DIR" "$DERIVED_DATA"
 NORMALIZED_EXPORT_PLIST="${WORK_DIR}/ExportOptions.normalized.plist"
-if normalize_export_plist "$EXPORT_PLIST" "$NORMALIZED_EXPORT_PLIST"; then
-  EXPORT_PLIST="$NORMALIZED_EXPORT_PLIST"
-else
-  echo "Invalid -exportOptionsPlist format: $EXPORT_PLIST"
-  echo "It must be valid plist (xml/binary) or JSON object."
-  echo "Example minimal ExportOptions.plist:"
-  cat <<'EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>method</key>
-  <string>app-store</string>
-  <key>signingStyle</key>
-  <string>automatic</string>
-  <key>teamID</key>
-  <string>YOUR_TEAM_ID</string>
-</dict>
-</plist>
-EOF
-  exit 1
-fi
+normalize_export_plist "$EXPORT_PLIST" "$NORMALIZED_EXPORT_PLIST" || { echo "Invalid -exportOptionsPlist format: $EXPORT_PLIST"; exit 1; }
+EXPORT_PLIST="$NORMALIZED_EXPORT_PLIST"
 
 SEED="${BUILD_TAG}-$(uuidgen | tr '[:upper:]' '[:lower:]')"
 ARCHIVE1="${WORK_DIR}/pass1.xcarchive"
@@ -280,41 +268,31 @@ else
   XCBUILD_ARGS=(-project "$PROJECT" "${XCBUILD_ARGS[@]}")
 fi
 
-echo "[obf] Target root: $TARGET_ROOT"
-run_step "Pass1 archive for symbol inventory" "$PASS1_LOG" \
-  xcodebuild "${XCBUILD_ARGS[@]}" -archivePath "$ARCHIVE1" clean archive
-
+run_step "Pass1 archive for symbol inventory" "$PASS1_LOG" xcodebuild "${XCBUILD_ARGS[@]}" -archivePath "$ARCHIVE1" clean archive
 APP_BIN="$(find "$ARCHIVE1/Products/Applications" -name "$SCHEME.app" -type d | head -n1)/$SCHEME"
 [[ -f "$APP_BIN" ]] || { echo "Unable to locate app binary in archive"; exit 1; }
 
 PY_ARGS=(--seed "$SEED" --binary "$APP_BIN" --order-file "$ORDER_FILE" --noise-file "$NOISE_FILE" --size-kb "$PADDING_KB")
-for src in "${SOURCE_ROOTS[@]}"; do
-  PY_ARGS+=(--source-root "$src")
-done
-
+for src in "${SOURCE_ROOTS[@]}"; do PY_ARGS+=(--source-root "$src"); done
 python3 "${ROOT_DIR}/scripts/ipa_obfuscator/shuffle_macho_symbols.py" "${PY_ARGS[@]}"
 [[ -s "$ORDER_FILE" ]] || { echo "Generated empty order file: $ORDER_FILE"; exit 1; }
 
-run_step "Pass2 archive with randomized layout" "$PASS2_LOG" \
-  xcodebuild "${XCBUILD_ARGS[@]}" -archivePath "$ARCHIVE2" \
-  OTHER_CFLAGS="\$(inherited) -DOBF_BUILD_SEED=$SEED" \
-  OTHER_LDFLAGS="\$(inherited) -Wl,-order_file,${ORDER_FILE}" \
-  clean archive
+run_step "Pass2 archive with randomized layout" "$PASS2_LOG" xcodebuild "${XCBUILD_ARGS[@]}" -archivePath "$ARCHIVE2" OTHER_CFLAGS="\$(inherited) -DOBF_BUILD_SEED=$SEED" OTHER_LDFLAGS="\$(inherited) -Wl,-order_file,${ORDER_FILE}" clean archive
 
 EXPORT_PATH="${OUT_DIR}/export-${BUILD_TAG}"
 mkdir -p "$EXPORT_PATH"
+EFFECTIVE_EXPORT_PLIST="$EXPORT_PLIST"
+if [[ -n "$PROFILE_NAME" ]]; then
+  EFFECTIVE_EXPORT_PLIST="${WORK_DIR}/ExportOptions.effective.plist"
+  apply_profile_mapping "$EXPORT_PLIST" "$ARCHIVE2" "$TEAM_ID" "$PROFILE_NAME" "$EFFECTIVE_EXPORT_PLIST"
+  echo "[obf] Applied forced provisioning profile mapping: $PROFILE_NAME"
+fi
 
-run_step "Exporting IPA" "$EXPORT_LOG" \
-  xcodebuild -exportArchive -archivePath "$ARCHIVE2" -exportPath "$EXPORT_PATH" -exportOptionsPlist "$EXPORT_PLIST"
+run_step "Exporting IPA" "$EXPORT_LOG" xcodebuild -exportArchive -archivePath "$ARCHIVE2" -exportPath "$EXPORT_PATH" -exportOptionsPlist "$EFFECTIVE_EXPORT_PLIST"
 
 IPA_PATH="$(find "$EXPORT_PATH" -name "*.ipa" | head -n1 || true)"
 [[ -n "$IPA_PATH" ]] || { echo "IPA export failed"; exit 1; }
-
 FINAL_IPA="${OUT_DIR}/$(basename "${IPA_PATH%.ipa}")-${BUILD_TAG}.ipa"
 cp "$IPA_PATH" "$FINAL_IPA"
 
-echo "[ok] Seed: $SEED"
-echo "[ok] Order file: $ORDER_FILE"
-echo "[ok] Noise source: $NOISE_FILE"
-echo "[ok] Logs: $PASS1_LOG | $PASS2_LOG | $EXPORT_LOG"
 echo "[ok] IPA: $FINAL_IPA"
