@@ -13,7 +13,7 @@ Usage:
 Required:
   -s  Xcode scheme
   -c  Build configuration (Release)
-  -t  Apple Team ID
+  -t  Apple Team ID (10位，如 ABCDE12345)
   -p  ExportOptions.plist path
 
 Optional:
@@ -62,6 +62,13 @@ while getopts ":s:c:t:p:w:x:d:o:r:k:n:P:h" opt; do
 done
 
 [[ -n "$SCHEME" && -n "$CONFIG" && -n "$TEAM_ID" && -n "$EXPORT_PLIST" ]] || { usage; exit 1; }
+
+if [[ "$TEAM_ID" == *"@"* ]]; then
+  echo "Invalid -t value: $TEAM_ID"
+  echo "-t expects Apple Team ID (e.g. ABCDE12345), not Apple ID email."
+  exit 1
+fi
+
 TARGET_ROOT="$(cd "$TARGET_ROOT" && pwd)"
 
 if [[ ${#SOURCE_ROOTS[@]} -eq 0 ]]; then
@@ -82,12 +89,21 @@ fi
 
 [[ -n "$WORKSPACE" || -n "$PROJECT" ]] || { echo "No workspace/project found under: $TARGET_ROOT"; exit 1; }
 
+if [[ -d "$EXPORT_PLIST" ]]; then
+  EXPORT_PLIST="${EXPORT_PLIST%/}/ExportOptions.plist"
+fi
 if [[ ! -f "$EXPORT_PLIST" ]]; then
-  if [[ -f "${TARGET_ROOT}/${EXPORT_PLIST}" ]]; then
+  if [[ -d "${TARGET_ROOT}/${EXPORT_PLIST}" ]]; then
+    EXPORT_PLIST="${TARGET_ROOT}/${EXPORT_PLIST%/}/ExportOptions.plist"
+  elif [[ -f "${TARGET_ROOT}/${EXPORT_PLIST}" ]]; then
     EXPORT_PLIST="${TARGET_ROOT}/${EXPORT_PLIST}"
   fi
 fi
-[[ -f "$EXPORT_PLIST" ]] || { echo "ExportOptions.plist not found: $EXPORT_PLIST"; exit 1; }
+[[ -f "$EXPORT_PLIST" ]] || {
+  echo "ExportOptions.plist not found: $EXPORT_PLIST"
+  echo "Tip: pass file path, not directory. Example: -p /path/to/ExportOptions.plist"
+  exit 1
+}
 
 mkdir -p "$OUT_DIR" "$DERIVED_DATA"
 SEED="${BUILD_TAG}-$(uuidgen | tr '[:upper:]' '[:lower:]')"

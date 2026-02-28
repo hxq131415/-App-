@@ -65,3 +65,29 @@ bash scripts/ipa_obfuscator/build_obfuscated_ipa.sh \
 - 链接顺序文件：`.obf_build/link.order`
 - 自动生成噪声源码：`Obfuscation/Generated/OBFBuildNoise.m`
 - 最终 IPA：`dist/<AppName>-<tag>.ipa`
+
+
+## 常见报错与正确命令
+
+你给的示例报错 `Invalid option: -P`，通常有两类原因：
+
+1. **执行的不是最新脚本**（旧版本没有 `-P` 参数）。
+2. **续行符 `\` 后面有空格**，导致下一行参数没有被拼接到同一条命令。
+
+另外你原命令还有两个问题：
+- `-t` 传的是邮箱（`tothhien1998@icloud.com`），但这里需要 **Apple Team ID**（例如 `ABCDE12345`）。
+- `-p` 传的是目录结尾 `/`，应传 `ExportOptions.plist` 文件路径。
+
+推荐这样执行：
+
+```bash
+bash scripts/ipa_obfuscator/build_obfuscated_ipa.sh \
+  -P "/Users/qing2/Downloads/ResumeListProject_测试" \
+  -s "ResumeListProject" \
+  -c "Release" \
+  -t "ABCDE12345" \
+  -p "/Users/qing2/Downloads/ResumeListProject_测试/ExportOptions.plist" \
+  -o "/Users/qing2/Downloads/ResumeListProject_测试/dist"
+```
+
+> 提示：脚本现在也支持 `-p` 直接传目录，会自动尝试拼接 `ExportOptions.plist`。
