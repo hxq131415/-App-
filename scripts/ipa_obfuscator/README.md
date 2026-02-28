@@ -147,3 +147,8 @@ grep -nE "Undefined symbols|duplicate symbol|ld:|clang: error|error:" .obf_build
   - Xcode 新版已弃用 `development`，应改为 `debugging`；脚本会自动把该字段规范化。
 - 若出现 `No provisioning profile provider found for ... .mobileprovision.Entitlements.plist`：
   - 本地 `~/Library/MobileDevice/Provisioning Profiles` 目录里有异常文件，删除该类 `*.Entitlements.plist` 后重试。
+
+
+- 如果你确认“profile 本身支持 iCloud”但仍报错：
+  - 很可能是 `ExportOptions.plist` 的 `provisioningProfiles` 映射到了错误 profile 名称，或只给主 App 配置了 profile，遗漏了 `.appex` 扩展。
+  - 新版脚本会在 export 失败时打印“有效 ExportOptions（method/signingStyle/teamID/provisioningProfiles）”和 archive 中所有 bundle id，方便逐个比对。

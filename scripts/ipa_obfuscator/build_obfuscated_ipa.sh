@@ -46,12 +46,14 @@ src = Path(sys.argv[1])
 dst = Path(sys.argv[2])
 raw = src.read_bytes()
 
+
 def normalize_obj(obj):
     if isinstance(obj, dict):
         # Xcode 16+ deprecates "development" in export method.
         if obj.get("method") == "development":
             obj["method"] = "debugging"
     return obj
+
 
 try:
     obj = normalize_obj(plistlib.loads(raw))
@@ -75,16 +77,61 @@ PY
 
 print_export_hints() {
   local logfile="$1"
+  local archive_path="${2:-}"
+  local export_plist_path="${3:-}"
 
   if grep -q "requires a provisioning profile with the iCloud feature" "$logfile"; then
     cat <<'EOF'
 [hint] Export failed due to provisioning profile capability mismatch:
        Your app has iCloud entitlement, but selected provisioning profile does not include iCloud.
-       Fix options:
-       1) In Apple Developer portal, create/regenerate profile for the same bundle id with iCloud capability enabled.
-       2) Re-download/install profile, and ensure Xcode target Signing uses that profile/team.
-       3) If using manual export, set ExportOptions.plist provisioningProfiles mapping to the iCloud-enabled profile.
+       Even if one profile supports iCloud, export can still fail when:
+       - ExportOptions.plist -> provisioningProfiles maps wrong profile name for app/appex bundle id.
+       - Extension targets (Notification/Share/etc.) use a different bundle id without iCloud-capable profile.
+       - teamID in ExportOptions differs from profile team.
 EOF
+
+    if [[ -n "$export_plist_path" && -f "$export_plist_path" ]]; then
+      python3 - "$export_plist_path" <<'PY'
+import plistlib
+import sys
+from pathlib import Path
+
+p = Path(sys.argv[1])
+obj = plistlib.loads(p.read_bytes())
+print('[hint] Effective ExportOptions:')
+for key in ('method', 'signingStyle', 'teamID'):
+    if key in obj:
+        print(f'       {key}: {obj[key]}')
+profiles = obj.get('provisioningProfiles')
+if isinstance(profiles, dict) and profiles:
+    print('       provisioningProfiles mapping:')
+    for k, v in profiles.items():
+        print(f'         {k} -> {v}')
+else:
+    print('       provisioningProfiles mapping: <empty>')
+PY
+    fi
+
+    if [[ -n "$archive_path" && -d "$archive_path/Products/Applications" ]]; then
+      python3 - "$archive_path" <<'PY'
+import plistlib
+import sys
+from pathlib import Path
+
+archive = Path(sys.argv[1])
+apps = list((archive / 'Products' / 'Applications').glob('*.app'))
+if not apps:
+    raise SystemExit(0)
+print('[hint] Bundle IDs found in archive (these all need matching signing/profile rules):')
+for app in apps:
+    plist_candidates = [app / 'Info.plist'] + list(app.glob('PlugIns/*.appex/Info.plist'))
+    for info in plist_candidates:
+        if info.exists():
+            data = plistlib.loads(info.read_bytes())
+            bid = data.get('CFBundleIdentifier', '<unknown>')
+            print(f'       - {bid}')
+PY
+    fi
   fi
 
   if grep -q 'Command line name "development" is deprecated' "$logfile"; then
@@ -109,7 +156,7 @@ run_step() {
     echo "[error] Last 80 lines from $logfile:"
     tail -n 80 "$logfile" || true
     if [[ "$step" == "Exporting IPA" ]]; then
-      print_export_hints "$logfile"
+      print_export_hints "$logfile" "$ARCHIVE2" "$EXPORT_PLIST"
     fi
     exit 1
   fi
