@@ -46,8 +46,15 @@ src = Path(sys.argv[1])
 dst = Path(sys.argv[2])
 raw = src.read_bytes()
 
+def normalize_obj(obj):
+    if isinstance(obj, dict):
+        # Xcode 16+ deprecates "development" in export method.
+        if obj.get("method") == "development":
+            obj["method"] = "debugging"
+    return obj
+
 try:
-    obj = plistlib.loads(raw)
+    obj = normalize_obj(plistlib.loads(raw))
     with dst.open("wb") as f:
         plistlib.dump(obj, f, fmt=plistlib.FMT_XML, sort_keys=True)
     raise SystemExit(0)
@@ -55,7 +62,7 @@ except Exception:
     pass
 
 try:
-    obj = json.loads(raw.decode("utf-8"))
+    obj = normalize_obj(json.loads(raw.decode("utf-8")))
     with dst.open("wb") as f:
         plistlib.dump(obj, f, fmt=plistlib.FMT_XML, sort_keys=True)
     raise SystemExit(0)
@@ -64,6 +71,32 @@ except Exception:
 
 raise SystemExit(2)
 PY
+}
+
+print_export_hints() {
+  local logfile="$1"
+
+  if grep -q "requires a provisioning profile with the iCloud feature" "$logfile"; then
+    cat <<'EOF'
+[hint] Export failed due to provisioning profile capability mismatch:
+       Your app has iCloud entitlement, but selected provisioning profile does not include iCloud.
+       Fix options:
+       1) In Apple Developer portal, create/regenerate profile for the same bundle id with iCloud capability enabled.
+       2) Re-download/install profile, and ensure Xcode target Signing uses that profile/team.
+       3) If using manual export, set ExportOptions.plist provisioningProfiles mapping to the iCloud-enabled profile.
+EOF
+  fi
+
+  if grep -q 'Command line name "development" is deprecated' "$logfile"; then
+    echo "[hint] ExportOptions method \"development\" is deprecated; script now normalizes it to \"debugging\"."
+  fi
+
+  if grep -q 'No provisioning profile provider found for profile ".*\.mobileprovision\.Entitlements\.plist"' "$logfile"; then
+    cat <<'EOF'
+[hint] Invalid file found in provisioning profiles folder (*.mobileprovision.Entitlements.plist).
+       Remove stray *.Entitlements.plist files under ~/Library/MobileDevice/Provisioning Profiles and retry.
+EOF
+  fi
 }
 
 run_step() {
@@ -75,6 +108,9 @@ run_step() {
     echo "[error] ${step} failed. Log: $logfile"
     echo "[error] Last 80 lines from $logfile:"
     tail -n 80 "$logfile" || true
+    if [[ "$step" == "Exporting IPA" ]]; then
+      print_export_hints "$logfile"
+    fi
     exit 1
   fi
 }

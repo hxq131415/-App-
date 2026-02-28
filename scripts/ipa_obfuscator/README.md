@@ -138,3 +138,12 @@ grep -nE "Undefined symbols|duplicate symbol|ld:|clang: error|error:" .obf_build
 </dict>
 </plist>
 ```
+
+
+- 若出现 `requires a provisioning profile with the iCloud feature`：
+  - 这是导出签名能力不匹配：App 启用了 iCloud entitlement，但导出使用的 profile 没有 iCloud 能力。
+  - 需要在开发者后台为同一 Bundle ID 重新生成带 iCloud 能力的 profile，并在 Xcode/ExportOptions 里使用该 profile。
+- 若出现 `Command line name "development" is deprecated`：
+  - Xcode 新版已弃用 `development`，应改为 `debugging`；脚本会自动把该字段规范化。
+- 若出现 `No provisioning profile provider found for ... .mobileprovision.Entitlements.plist`：
+  - 本地 `~/Library/MobileDevice/Provisioning Profiles` 目录里有异常文件，删除该类 `*.Entitlements.plist` 后重试。
