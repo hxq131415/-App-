@@ -156,8 +156,8 @@ python3 "${ROOT_DIR}/scripts/ipa_obfuscator/shuffle_macho_symbols.py" "${PY_ARGS
 
 run_step "Pass2 archive with randomized layout" "$PASS2_LOG" \
   xcodebuild "${XCBUILD_ARGS[@]}" -archivePath "$ARCHIVE2" \
-  OTHER_CFLAGS="$(inherited) -DOBF_BUILD_SEED=$SEED" \
-  OTHER_LDFLAGS="$(inherited) -Wl,-order_file,${ORDER_FILE}" \
+  OTHER_CFLAGS="\$(inherited) -DOBF_BUILD_SEED=$SEED" \
+  OTHER_LDFLAGS="\$(inherited) -Wl,-order_file,${ORDER_FILE}" \
   clean archive
 
 EXPORT_PATH="${OUT_DIR}/export-${BUILD_TAG}"

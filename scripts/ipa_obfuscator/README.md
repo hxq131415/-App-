@@ -110,6 +110,8 @@ bash scripts/ipa_obfuscator/build_obfuscated_ipa.sh \
 - 真正失败点通常是后面的 `Ld ... failed`，常见是链接参数被覆盖导致三方库符号丢失。
 - 本脚本已改为保留 `$(inherited)`，避免覆盖工程原有 `OTHER_LDFLAGS` / `OTHER_CFLAGS`。
 
+- 若出现 `Undefined symbols ...`（例如 `SVProgressHUD`）且仅在混淆二次归档失败，通常是链接参数被错误覆盖/展开；脚本现已用 `\$(inherited)` 保留原工程链接参数并追加 `order_file`。
+
 可快速检查：
 ```bash
 grep -nE "Undefined symbols|duplicate symbol|ld:|clang: error|error:" .obf_build/obf_pass2.log | head -n 40
