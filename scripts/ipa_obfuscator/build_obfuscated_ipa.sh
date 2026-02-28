@@ -32,6 +32,40 @@ Optional:
 EOF
 }
 
+normalize_export_plist() {
+  local input_path="$1"
+  local output_path="$2"
+
+  python3 - "$input_path" "$output_path" <<'PY'
+import json
+import plistlib
+import sys
+from pathlib import Path
+
+src = Path(sys.argv[1])
+dst = Path(sys.argv[2])
+raw = src.read_bytes()
+
+try:
+    obj = plistlib.loads(raw)
+    with dst.open("wb") as f:
+        plistlib.dump(obj, f, fmt=plistlib.FMT_XML, sort_keys=True)
+    raise SystemExit(0)
+except Exception:
+    pass
+
+try:
+    obj = json.loads(raw.decode("utf-8"))
+    with dst.open("wb") as f:
+        plistlib.dump(obj, f, fmt=plistlib.FMT_XML, sort_keys=True)
+    raise SystemExit(0)
+except Exception:
+    pass
+
+raise SystemExit(2)
+PY
+}
+
 run_step() {
   local step="$1"
   local logfile="$2"
@@ -123,6 +157,30 @@ fi
 }
 
 mkdir -p "$OUT_DIR" "$DERIVED_DATA"
+NORMALIZED_EXPORT_PLIST="${WORK_DIR}/ExportOptions.normalized.plist"
+if normalize_export_plist "$EXPORT_PLIST" "$NORMALIZED_EXPORT_PLIST"; then
+  EXPORT_PLIST="$NORMALIZED_EXPORT_PLIST"
+else
+  echo "Invalid -exportOptionsPlist format: $EXPORT_PLIST"
+  echo "It must be valid plist (xml/binary) or JSON object."
+  echo "Example minimal ExportOptions.plist:"
+  cat <<'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>method</key>
+  <string>app-store</string>
+  <key>signingStyle</key>
+  <string>automatic</string>
+  <key>teamID</key>
+  <string>YOUR_TEAM_ID</string>
+</dict>
+</plist>
+EOF
+  exit 1
+fi
+
 SEED="${BUILD_TAG}-$(uuidgen | tr '[:upper:]' '[:lower:]')"
 ARCHIVE1="${WORK_DIR}/pass1.xcarchive"
 ARCHIVE2="${WORK_DIR}/pass2.xcarchive"

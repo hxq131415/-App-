@@ -116,3 +116,25 @@ bash scripts/ipa_obfuscator/build_obfuscated_ipa.sh \
 ```bash
 grep -nE "Undefined symbols|duplicate symbol|ld:|clang: error|error:" .obf_build/obf_pass2.log | head -n 40
 ```
+
+
+- 若出现 `error: Couldn't load -exportOptionsPlist ... isn't in the correct format`：
+  - 说明 `-p` 指向的文件内容不是合法 plist。
+  - 脚本现在会先自动规范化 `ExportOptions.plist`（支持 xml/binary plist，或 JSON 对象自动转 plist）。
+  - 若仍失败，请直接改为标准 plist 格式（可用下方最小模板）。
+
+最小可用 `ExportOptions.plist`：
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>method</key>
+  <string>app-store</string>
+  <key>signingStyle</key>
+  <string>automatic</string>
+  <key>teamID</key>
+  <string>YOUR_TEAM_ID</string>
+</dict>
+</plist>
+```
