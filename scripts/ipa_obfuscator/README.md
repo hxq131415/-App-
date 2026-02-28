@@ -102,3 +102,15 @@ bash scripts/ipa_obfuscator/build_obfuscated_ipa.sh \
 - `.obf_build/obf_export.log`
 
 其中 `obf_pass2.log` 里紧邻 `Ld` 前后的具体报错（如未定义符号、重复符号、链接参数格式错误）才是最终原因。
+
+
+
+补充说明：
+- 你贴出来的 `IPHONEOS_DEPLOYMENT_TARGET ... warning` 是 **警告**，一般不会直接导致 `ARCHIVE FAILED`。
+- 真正失败点通常是后面的 `Ld ... failed`，常见是链接参数被覆盖导致三方库符号丢失。
+- 本脚本已改为保留 `$(inherited)`，避免覆盖工程原有 `OTHER_LDFLAGS` / `OTHER_CFLAGS`。
+
+可快速检查：
+```bash
+grep -nE "Undefined symbols|duplicate symbol|ld:|clang: error|error:" .obf_build/obf_pass2.log | head -n 40
+```
