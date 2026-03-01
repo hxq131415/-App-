@@ -174,3 +174,23 @@ bash scripts/ipa_obfuscator/build_obfuscated_ipa.sh \
 - 若出现 `No profiles for '<bundle id>' were found`：通常是本地 profile 缓存异常或映射缺失。可先清理 `~/Library/MobileDevice/Provisioning Profiles/*.Entitlements.plist`，再用 `-m "Profile Name"` + `-A` 重试。
 
 - 若出现 `xcodebuild: error: Unknown build action "".`：通常是脚本参数展开传入了空 action；当前版本已修复该问题，请确保使用最新版脚本。
+
+
+## 改为在 Xcode Run Script 里混淆（推荐你当前场景）
+
+如果你希望“混淆在工程编译时做，IPA 手动导出”，可在 Xcode Target -> Build Phases 新增 **Run Script**，脚本内容：
+
+```bash
+bash "$SRCROOT/scripts/ipa_obfuscator/xcode_run_script_obfuscate.sh"
+```
+
+可选环境变量：
+- `OBF_PADDING_KB`：padding 大小（默认 `64`）
+- `OBF_BUILD_SEED`：指定固定 seed（不传则每次自动随机）
+
+该脚本会生成：
+- `Obfuscation/Generated/OBFBuildNoise.m`
+- `Obfuscation/Generated/link.order`（Run Script 模式下仅占位，可用于后续自定义链接策略）
+- `Obfuscation/Generated/.obf_seed`
+
+然后你直接在 Xcode 里 `Archive` / `Distribute App` 手动导出 IPA 即可。

@@ -133,15 +133,22 @@ def write_noise_source(path: Path, seed: str, selectors: list[str], classes: lis
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", required=True)
-    parser.add_argument("--binary", required=True)
+    parser.add_argument("--binary")
     parser.add_argument("--source-root", action="append", required=True)
     parser.add_argument("--order-file", required=True)
     parser.add_argument("--noise-file", required=True)
     parser.add_argument("--size-kb", type=int, default=64)
+    parser.add_argument("--skip-binary", action="store_true")
     args = parser.parse_args()
 
     classes, selectors, functions = collect_objc_tokens([Path(x) for x in args.source_root])
-    c_syms, s_syms, m_syms, f_syms = extract_binary_symbols(Path(args.binary))
+
+    if args.skip_binary:
+        c_syms, s_syms, m_syms, f_syms = [], [], [], []
+    else:
+        if not args.binary:
+            raise SystemExit("--binary is required unless --skip-binary is set")
+        c_syms, s_syms, m_syms, f_syms = extract_binary_symbols(Path(args.binary))
 
     ordered = [
         deterministic_shuffle(c_syms, args.seed, "classlist"),
