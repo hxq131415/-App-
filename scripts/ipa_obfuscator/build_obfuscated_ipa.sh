@@ -74,9 +74,10 @@ setup_signing_certificate() {
   [[ -n "$cert_password" ]] || { echo "-W <p12_password> is required when using -C"; exit 1; }
 
   KEYCHAIN_PASSWORD="obf-$(uuidgen | tr '[:upper:]' '[:lower:]')"
-  KEYCHAIN_PATH="${WORK_DIR}/obf-signing.keychain-db"
+  KEYCHAIN_PATH="${WORK_DIR}/obf-signing-$(uuidgen | tr '[:upper:]' '[:lower:]').keychain-db"
   ORIGINAL_KEYCHAINS="$(security list-keychains -d user | tr -d '"')"
 
+  security delete-keychain "$KEYCHAIN_PATH" >/dev/null 2>&1 || true
   security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
   CREATED_TEMP_KEYCHAIN=1
   security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
