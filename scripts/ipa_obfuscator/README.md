@@ -172,3 +172,5 @@ bash scripts/ipa_obfuscator/build_obfuscated_ipa.sh \
 
 - 若出现 `Command line name "app-store" is deprecated`：脚本会自动把 `method: app-store` 规范化为 `app-store-connect`。
 - 若出现 `No profiles for '<bundle id>' were found`：通常是本地 profile 缓存异常或映射缺失。可先清理 `~/Library/MobileDevice/Provisioning Profiles/*.Entitlements.plist`，再用 `-m "Profile Name"` + `-A` 重试。
+
+- 若出现 `xcodebuild: error: Unknown build action "".`：通常是脚本参数展开传入了空 action；当前版本已修复该问题，请确保使用最新版脚本。
