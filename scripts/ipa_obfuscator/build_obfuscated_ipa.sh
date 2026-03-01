@@ -31,7 +31,69 @@ Optional:
   -P  Target iOS project root directory (default: current repo root)
   -m  Force provisioning profile name for all archive bundle IDs (optional)
   -A  Enable xcodebuild -allowProvisioningUpdates (optional)
+  -C  .p12 signing certificate path (optional)
+  -W  .p12 certificate password (required when -C is used)
+  -F  .mobileprovision profile path (can be passed multiple times)
 EOF
+}
+
+KEYCHAIN_PATH=""
+KEYCHAIN_PASSWORD=""
+CREATED_TEMP_KEYCHAIN=0
+ORIGINAL_KEYCHAINS=""
+
+cleanup_keychain() {
+  if [[ "$CREATED_TEMP_KEYCHAIN" -eq 1 && -n "$KEYCHAIN_PATH" ]]; then
+    security list-keychains -d user -s ${ORIGINAL_KEYCHAINS:-} >/dev/null 2>&1 || true
+    security delete-keychain "$KEYCHAIN_PATH" >/dev/null 2>&1 || true
+  fi
+}
+
+install_profile() {
+  local profile_path="$1"
+  [[ -f "$profile_path" ]] || { echo "Provisioning profile not found: $profile_path"; exit 1; }
+
+  local tmp_plist
+  tmp_plist="$(mktemp "${WORK_DIR}/profile.XXXXXX.plist")"
+  security cms -D -i "$profile_path" > "$tmp_plist"
+  local uuid
+  uuid="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$tmp_plist" 2>/dev/null || true)"
+  rm -f "$tmp_plist"
+  [[ -n "$uuid" ]] || { echo "Unable to read UUID from provisioning profile: $profile_path"; exit 1; }
+
+  local target_dir="$HOME/Library/MobileDevice/Provisioning Profiles"
+  mkdir -p "$target_dir"
+  cp "$profile_path" "$target_dir/${uuid}.mobileprovision"
+  echo "[obf] Installed provisioning profile: ${uuid}.mobileprovision"
+}
+
+setup_signing_certificate() {
+  local cert_path="$1"
+  local cert_password="$2"
+  [[ -f "$cert_path" ]] || { echo "Signing certificate not found: $cert_path"; exit 1; }
+  [[ -n "$cert_password" ]] || { echo "-W <p12_password> is required when using -C"; exit 1; }
+
+  KEYCHAIN_PASSWORD="obf-$(uuidgen | tr '[:upper:]' '[:lower:]')"
+  KEYCHAIN_PATH="${WORK_DIR}/obf-signing.keychain-db"
+  ORIGINAL_KEYCHAINS="$(security list-keychains -d user | tr -d '"')"
+
+  security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+  CREATED_TEMP_KEYCHAIN=1
+  security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+  security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+  security import "$cert_path" -k "$KEYCHAIN_PATH" -P "$cert_password" -T /usr/bin/codesign -T /usr/bin/security -T /usr/bin/xcodebuild
+  security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+  if [[ -n "$ORIGINAL_KEYCHAINS" ]]; then
+    # shellcheck disable=SC2206
+    local keychains=( $ORIGINAL_KEYCHAINS )
+    security list-keychains -d user -s "$KEYCHAIN_PATH" "${keychains[@]}"
+  else
+    security list-keychains -d user -s "$KEYCHAIN_PATH"
+  fi
+  security default-keychain -d user -s "$KEYCHAIN_PATH"
+
+  echo "[obf] Imported signing certificate into temporary keychain: $KEYCHAIN_PATH"
 }
 
 normalize_export_plist() {
@@ -217,8 +279,11 @@ SOURCE_ROOTS=()
 TARGET_ROOT="${ROOT_DIR}"
 PROFILE_NAME=""
 ALLOW_PROV_UPDATES=0
+CERT_P12=""
+CERT_PASSWORD=""
+PROFILES=()
 
-while getopts ":s:c:t:p:w:x:d:o:r:k:n:P:m:Ah" opt; do
+while getopts ":s:c:t:p:w:x:d:o:r:k:n:P:m:C:W:F:Ah" opt; do
   case "$opt" in
     s) SCHEME="$OPTARG" ;;
     c) CONFIG="$OPTARG" ;;
@@ -233,6 +298,9 @@ while getopts ":s:c:t:p:w:x:d:o:r:k:n:P:m:Ah" opt; do
     n) BUILD_TAG="$OPTARG" ;;
     P) TARGET_ROOT="$OPTARG" ;;
     m) PROFILE_NAME="$OPTARG" ;;
+    C) CERT_P12="$OPTARG" ;;
+    W) CERT_PASSWORD="$OPTARG" ;;
+    F) PROFILES+=("$OPTARG") ;;
     A) ALLOW_PROV_UPDATES=1 ;;
     h) usage; exit 0 ;;
     :) echo "Option -$OPTARG requires an argument"; usage; exit 1 ;;
@@ -262,6 +330,15 @@ if [[ ! -f "$EXPORT_PLIST" ]]; then
   [[ -f "${TARGET_ROOT}/${EXPORT_PLIST}" ]] && EXPORT_PLIST="${TARGET_ROOT}/${EXPORT_PLIST}"
 fi
 [[ -f "$EXPORT_PLIST" ]] || { echo "ExportOptions.plist not found: $EXPORT_PLIST"; exit 1; }
+
+if [[ -n "$CERT_P12" ]]; then
+  setup_signing_certificate "$CERT_P12" "$CERT_PASSWORD"
+  trap cleanup_keychain EXIT
+fi
+
+for profile in "${PROFILES[@]}"; do
+  install_profile "$profile"
+done
 
 mkdir -p "$OUT_DIR" "$DERIVED_DATA"
 NORMALIZED_EXPORT_PLIST="${WORK_DIR}/ExportOptions.normalized.plist"
@@ -314,7 +391,12 @@ if [[ -n "$PROFILE_NAME" ]]; then
   echo "[obf] Applied forced provisioning profile mapping: $PROFILE_NAME"
 fi
 
-run_step "Exporting IPA" "$EXPORT_LOG" xcodebuild -exportArchive "${EXPORT_XCBUILD_ARGS[@]:-}" -archivePath "$ARCHIVE2" -exportPath "$EXPORT_PATH" -exportOptionsPlist "$EFFECTIVE_EXPORT_PLIST"
+EXPORT_CMD=(xcodebuild -exportArchive)
+if [[ ${#EXPORT_XCBUILD_ARGS[@]} -gt 0 ]]; then
+  EXPORT_CMD+=("${EXPORT_XCBUILD_ARGS[@]}")
+fi
+EXPORT_CMD+=(-archivePath "$ARCHIVE2" -exportPath "$EXPORT_PATH" -exportOptionsPlist "$EFFECTIVE_EXPORT_PLIST")
+run_step "Exporting IPA" "$EXPORT_LOG" "${EXPORT_CMD[@]}"
 
 IPA_PATH="$(find "$EXPORT_PATH" -name "*.ipa" | head -n1 || true)"
 [[ -n "$IPA_PATH" ]] || { echo "IPA export failed"; exit 1; }

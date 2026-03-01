@@ -60,6 +60,34 @@ bash scripts/ipa_obfuscator/build_obfuscated_ipa.sh \
 - `-P`: 指定要混淆的目标工程根目录（默认当前仓库根目录）
 - `-m`: 强制给 archive 中所有 bundle id 使用同一个 provisioning profile 名称（导出签名兜底）
 - `-A`: 导出/归档时增加 `-allowProvisioningUpdates`（允许 xcodebuild 自动更新签名资源）
+- `-C`: 指定 `.p12` 证书路径（可选，脚本会导入临时 keychain）
+- `-W`: `.p12` 证书密码（与 `-C` 一起使用）
+- `-F`: 指定 `.mobileprovision` 文件路径（可多次，脚本会自动安装到 `~/Library/MobileDevice/Provisioning Profiles`）
+
+
+
+## 使用证书与 profile 自动打包（你当前场景）
+
+如果你可以提供证书和 profile 文件，脚本现在支持直接导入：
+
+```bash
+bash scripts/ipa_obfuscator/build_obfuscated_ipa.sh \
+  -P "/path/to/TargetIOSProject" \
+  -s "YourScheme" \
+  -c "Release" \
+  -t "ABCDE12345" \
+  -p "/path/to/ExportOptions.plist" \
+  -C "/path/to/dist.p12" \
+  -W "p12_password" \
+  -F "/path/to/app.mobileprovision" \
+  -m "Profile Display Name" \
+  -A
+```
+
+说明：
+- `-C/-W` 会把 p12 导入临时 keychain，仅本次构建使用，脚本结束自动删除。
+- `-F` 可传多次（主 App + appex 多个 profile）。
+- 仍建议配合 `-m`，避免 `provisioningProfiles mapping: <empty>` 导致导出失败。
 
 ## 输出
 
