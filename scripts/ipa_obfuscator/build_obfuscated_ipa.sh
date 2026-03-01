@@ -336,7 +336,7 @@ if [[ -n "$CERT_P12" ]]; then
   trap cleanup_keychain EXIT
 fi
 
-for profile in "${PROFILES[@]}"; do
+for profile in "${PROFILES[@]:-}"; do
   install_profile "$profile"
 done
 
