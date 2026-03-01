@@ -7,6 +7,7 @@ mkdir -p "${WORK_DIR}"
 
 PASS1_LOG="${WORK_DIR}/obf_pass1.log"
 PASS2_LOG="${WORK_DIR}/obf_pass2.log"
+PASS2_RETRY_LOG="${WORK_DIR}/obf_pass2_retry.log"
 EXPORT_LOG="${WORK_DIR}/obf_export.log"
 
 usage() {
@@ -299,6 +300,12 @@ EOF
   fi
 }
 
+print_link_hints() {
+  local logfile="$1"
+  echo "[hint] Linker failure quick scan from $logfile:"
+  grep -nE "Undefined symbols|duplicate symbol|ld:|clang: error|error:" "$logfile" | head -n 40 || true
+}
+
 run_step() {
   local step="$1"
   local logfile="$2"
@@ -313,6 +320,19 @@ run_step() {
     fi
     exit 1
   fi
+}
+
+run_pass2_archive() {
+  local with_order_flags="$1"
+  local logfile="$2"
+  if xcodebuild "${ARCHIVE_XCBUILD_ARGS[@]}" -archivePath "$ARCHIVE2" OTHER_CFLAGS="\$(inherited) -DOBF_BUILD_SEED=$SEED" OTHER_LDFLAGS="$with_order_flags" clean archive >"$logfile" 2>&1; then
+    return 0
+  fi
+
+  echo "[error] Pass2 archive with randomized layout failed. Log: $logfile"
+  tail -n 80 "$logfile" || true
+  print_link_hints "$logfile"
+  return 1
 }
 
 SCHEME=""
@@ -332,6 +352,7 @@ ALLOW_PROV_UPDATES=0
 CERT_P12=""
 CERT_PASSWORD=""
 PROFILES=()
+ALLOW_LINK_FALLBACK=1
 
 while getopts ":s:c:t:p:w:x:d:o:r:k:n:P:m:C:W:F:Ah" opt; do
   case "$opt" in
@@ -430,7 +451,14 @@ for src in "${SOURCE_ROOTS[@]}"; do PY_ARGS+=(--source-root "$src"); done
 python3 "${ROOT_DIR}/scripts/ipa_obfuscator/shuffle_macho_symbols.py" "${PY_ARGS[@]}"
 [[ -s "$ORDER_FILE" ]] || { echo "Generated empty order file: $ORDER_FILE"; exit 1; }
 
-run_step "Pass2 archive with randomized layout" "$PASS2_LOG" xcodebuild "${ARCHIVE_XCBUILD_ARGS[@]}" -archivePath "$ARCHIVE2" OTHER_CFLAGS="\$(inherited) -DOBF_BUILD_SEED=$SEED" OTHER_LDFLAGS="\$(inherited) -Wl,-order_file,${ORDER_FILE}" clean archive
+if ! run_pass2_archive "\$(inherited) -Wl,-order_file,${ORDER_FILE}" "$PASS2_LOG"; then
+  if [[ "$ALLOW_LINK_FALLBACK" -eq 1 ]]; then
+    echo "[warn] Retrying Pass2 archive without order_file to avoid linker compatibility failures."
+    run_step "Pass2 archive fallback (without order_file)" "$PASS2_RETRY_LOG" xcodebuild "${ARCHIVE_XCBUILD_ARGS[@]}" -archivePath "$ARCHIVE2" OTHER_CFLAGS="\$(inherited) -DOBF_BUILD_SEED=$SEED" OTHER_LDFLAGS="\$(inherited)" clean archive
+  else
+    exit 1
+  fi
+fi
 
 EXPORT_PATH="${OUT_DIR}/export-${BUILD_TAG}"
 mkdir -p "$EXPORT_PATH"

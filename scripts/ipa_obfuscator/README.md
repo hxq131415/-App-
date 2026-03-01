@@ -148,6 +148,12 @@ grep -nE "Undefined symbols|duplicate symbol|ld:|clang: error|error:" .obf_build
 ```
 
 
+
+- 若二次归档在 `Ld ...` 失败：
+  - 脚本会自动打印链接关键错误（`Undefined symbols` / `duplicate symbol` / `ld:`）。
+  - 新版脚本会自动进行一次 **fallback 重试**（去掉 `-Wl,-order_file`）以提高打包成功率。
+  - fallback 成功时，仍保留 seed 与噪声注入，但函数物理地址重排强度会降低。
+
 - 若出现 `error: Couldn't load -exportOptionsPlist ... isn't in the correct format`：
   - 说明 `-p` 指向的文件内容不是合法 plist。
   - 脚本现在会先自动规范化 `ExportOptions.plist`（支持 xml/binary plist，或 JSON 对象自动转 plist）。
