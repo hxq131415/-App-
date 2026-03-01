@@ -154,6 +154,11 @@ grep -nE "Undefined symbols|duplicate symbol|ld:|clang: error|error:" .obf_build
   - 新版脚本会自动进行一次 **fallback 重试**（去掉 `-Wl,-order_file`）以提高打包成功率。
   - fallback 成功时，仍保留 seed 与噪声注入，但函数物理地址重排强度会降低。
 
+- 若一次归档（Pass1）就报 `Build input file cannot be found ... order.txt/order.file`：
+  - 说明工程本身残留了失效的 `OTHER_LDFLAGS` 里的 `-Wl,-order_file,...` 路径。
+  - 新版脚本会自动识别并重试 Pass1（临时注入 `OTHER_LDFLAGS=$(inherited)`）以绕过该历史配置。
+  - 重试日志在 `.obf_build/obf_pass1_retry.log`。
+
 - 若出现 `error: Couldn't load -exportOptionsPlist ... isn't in the correct format`：
   - 说明 `-p` 指向的文件内容不是合法 plist。
   - 脚本现在会先自动规范化 `ExportOptions.plist`（支持 xml/binary plist，或 JSON 对象自动转 plist）。

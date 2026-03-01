@@ -6,6 +6,7 @@ WORK_DIR="${ROOT_DIR}/.obf_build"
 mkdir -p "${WORK_DIR}"
 
 PASS1_LOG="${WORK_DIR}/obf_pass1.log"
+PASS1_RETRY_LOG="${WORK_DIR}/obf_pass1_retry.log"
 PASS2_LOG="${WORK_DIR}/obf_pass2.log"
 PASS2_RETRY_LOG="${WORK_DIR}/obf_pass2_retry.log"
 EXPORT_LOG="${WORK_DIR}/obf_export.log"
@@ -335,6 +336,27 @@ run_pass2_archive() {
   return 1
 }
 
+run_pass1_archive() {
+  if xcodebuild "${ARCHIVE_XCBUILD_ARGS[@]}" -archivePath "$ARCHIVE1" clean archive >"$PASS1_LOG" 2>&1; then
+    return 0
+  fi
+
+  echo "[error] Pass1 archive for symbol inventory failed. Log: $PASS1_LOG"
+  tail -n 80 "$PASS1_LOG" || true
+
+  if grep -qE 'Build input file cannot be found: .*order\.(txt|file)' "$PASS1_LOG" || grep -q -- '-Wl,-order_file' "$PASS1_LOG"; then
+    echo "[warn] Detected stale project order_file setting. Retrying Pass1 with sanitized OTHER_LDFLAGS=\$(inherited)."
+    if xcodebuild "${ARCHIVE_XCBUILD_ARGS[@]}" -archivePath "$ARCHIVE1" OTHER_LDFLAGS="\$(inherited)" clean archive >"$PASS1_RETRY_LOG" 2>&1; then
+      echo "[obf] Pass1 retry succeeded. Retry log: $PASS1_RETRY_LOG"
+      return 0
+    fi
+    echo "[error] Pass1 retry also failed. Log: $PASS1_RETRY_LOG"
+    tail -n 80 "$PASS1_RETRY_LOG" || true
+  fi
+
+  return 1
+}
+
 SCHEME=""
 CONFIG=""
 TEAM_ID=""
@@ -442,7 +464,7 @@ if [[ "$ALLOW_PROV_UPDATES" -eq 1 ]]; then
   EXPORT_XCBUILD_ARGS+=(-allowProvisioningUpdates)
 fi
 
-run_step "Pass1 archive for symbol inventory" "$PASS1_LOG" xcodebuild "${ARCHIVE_XCBUILD_ARGS[@]}" -archivePath "$ARCHIVE1" clean archive
+run_pass1_archive || exit 1
 APP_BIN="$(find "$ARCHIVE1/Products/Applications" -name "$SCHEME.app" -type d | head -n1)/$SCHEME"
 [[ -f "$APP_BIN" ]] || { echo "Unable to locate app binary in archive"; exit 1; }
 
