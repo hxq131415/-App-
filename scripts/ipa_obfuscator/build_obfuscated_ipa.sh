@@ -314,7 +314,7 @@ if [[ -n "$PROFILE_NAME" ]]; then
   echo "[obf] Applied forced provisioning profile mapping: $PROFILE_NAME"
 fi
 
-run_step "Exporting IPA" "$EXPORT_LOG" xcodebuild -exportArchive "${EXPORT_XCBUILD_ARGS[@]}" -archivePath "$ARCHIVE2" -exportPath "$EXPORT_PATH" -exportOptionsPlist "$EFFECTIVE_EXPORT_PLIST"
+run_step "Exporting IPA" "$EXPORT_LOG" xcodebuild -exportArchive "${EXPORT_XCBUILD_ARGS[@]:-}" -archivePath "$ARCHIVE2" -exportPath "$EXPORT_PATH" -exportOptionsPlist "$EFFECTIVE_EXPORT_PLIST"
 
 IPA_PATH="$(find "$EXPORT_PATH" -name "*.ipa" | head -n1 || true)"
 [[ -n "$IPA_PATH" ]] || { echo "IPA export failed"; exit 1; }
