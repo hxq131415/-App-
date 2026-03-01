@@ -32,7 +32,7 @@ Optional:
   -m  Force provisioning profile name for all archive bundle IDs (optional)
   -A  Enable xcodebuild -allowProvisioningUpdates (optional)
   -C  .p12 signing certificate path (optional)
-  -W  .p12 certificate password (required when -C is used)
+  -W  .p12 certificate password (or @/path/to/password.txt when -C is used)
   -F  .mobileprovision profile path (can be passed multiple times)
 EOF
 }
@@ -67,11 +67,28 @@ install_profile() {
   echo "[obf] Installed provisioning profile: ${uuid}.mobileprovision"
 }
 
+resolve_password_arg() {
+  local raw="$1"
+  if [[ "$raw" == @* ]]; then
+    local pass_file="${raw#@}"
+    [[ -f "$pass_file" ]] || { echo "Password file not found: $pass_file"; exit 1; }
+    python3 - "$pass_file" <<'PY'
+from pathlib import Path
+import sys
+text = Path(sys.argv[1]).read_text(encoding='utf-8')
+print(text.splitlines()[0] if text.splitlines() else '', end='')
+PY
+    return
+  fi
+  printf '%s' "$raw"
+}
+
 setup_signing_certificate() {
   local cert_path="$1"
   local cert_password="$2"
   [[ -f "$cert_path" ]] || { echo "Signing certificate not found: $cert_path"; exit 1; }
-  [[ -n "$cert_password" ]] || { echo "-W <p12_password> is required when using -C"; exit 1; }
+  [[ -n "$cert_password" ]] || { echo "-W <p12_password|@password_file> is required when using -C"; exit 1; }
+  cert_password="$(resolve_password_arg "$cert_password")"
 
   KEYCHAIN_PASSWORD="obf-$(uuidgen | tr '[:upper:]' '[:lower:]')"
   KEYCHAIN_PATH="${WORK_DIR}/obf-signing-$(uuidgen | tr '[:upper:]' '[:lower:]').keychain-db"
@@ -90,15 +107,28 @@ setup_signing_certificate() {
     if grep -q "MAC verification failed" "$import_log"; then
       cat <<'EOF'
 [hint] security import reported: MAC verification failed during PKCS12 import.
-       Usually this means the -W password is incorrect for the .p12 file.
-       Please verify password by manually importing in Keychain Access,
-       or re-export the certificate as .p12 with a known password.
+       Usually this means the -W password is incorrect, contains unescaped shell chars,
+       or the p12 has no password while a password was provided.
+       Try one of the following:
+       1) pass password via file: -W @/absolute/path/p12_password.txt
+       2) verify password by importing the same p12 in Keychain Access
+       3) re-export the certificate as .p12 with a new simple password
 EOF
+      if security import "$cert_path" -k "$KEYCHAIN_PATH" -P "" -T /usr/bin/codesign -T /usr/bin/security -T /usr/bin/xcodebuild >/dev/null 2>&1; then
+        echo "[warn] p12 import succeeded with empty password; continuing."
+        rm -f "$import_log"
+      else
+        echo "[hint] security import output:"
+        sed -n '1,40p' "$import_log"
+        rm -f "$import_log"
+        exit 1
+      fi
+    else
+      echo "[hint] security import output:"
+      sed -n '1,40p' "$import_log"
+      rm -f "$import_log"
+      exit 1
     fi
-    echo "[hint] security import output:"
-    sed -n '1,40p' "$import_log"
-    rm -f "$import_log"
-    exit 1
   fi
   rm -f "$import_log"
 

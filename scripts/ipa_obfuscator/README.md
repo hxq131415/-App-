@@ -61,7 +61,7 @@ bash scripts/ipa_obfuscator/build_obfuscated_ipa.sh \
 - `-m`: 强制给 archive 中所有 bundle id 使用同一个 provisioning profile 名称（导出签名兜底）
 - `-A`: 导出/归档时增加 `-allowProvisioningUpdates`（允许 xcodebuild 自动更新签名资源）
 - `-C`: 指定 `.p12` 证书路径（可选，脚本会导入临时 keychain）
-- `-W`: `.p12` 证书密码（与 `-C` 一起使用）
+- `-W`: `.p12` 证书密码（与 `-C` 一起使用；也支持 `@/path/to/password.txt`）
 - `-F`: 指定 `.mobileprovision` 文件路径（可多次，脚本会自动安装到 `~/Library/MobileDevice/Provisioning Profiles`）
 
 
@@ -204,9 +204,10 @@ bash scripts/ipa_obfuscator/build_obfuscated_ipa.sh \
 - 若出现 `xcodebuild: error: Unknown build action "".`：通常是脚本参数展开传入了空 action；当前版本已修复该问题，请确保使用最新版脚本。
 
 - 若出现 `security: SecKeychainItemImport: MAC verification failed during PKCS12 import`：
-  - 通常是 `-W` 提供的 p12 密码不正确。
-  - 请先在钥匙串手工导入验证密码，或重新导出 `.p12` 并使用明确的新密码。
-  - 新版脚本会在该错误出现时输出定向提示和 `security import` 的日志片段。
+  - 通常是 `-W` 提供的 p12 密码不正确，或密码里有特殊字符被 shell 解释。
+  - 建议改用 `-W @/absolute/path/p12_password.txt`（第一行作为密码，避免转义问题）。
+  - 脚本会自动尝试“空密码导入”兜底；若成功会继续构建。
+  - 若仍失败，请先在钥匙串手工导入验证，或重新导出 `.p12` 并使用新密码。
 
 
 ## 改为在 Xcode Run Script 里混淆（推荐你当前场景）
