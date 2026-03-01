@@ -289,7 +289,7 @@ if [[ "$ALLOW_PROV_UPDATES" -eq 1 ]]; then
   PROV_ARGS=(-allowProvisioningUpdates)
 fi
 
-run_step "Pass1 archive for symbol inventory" "$PASS1_LOG" xcodebuild "${XCBUILD_ARGS[@]}" "${PROV_ARGS[@]}" -archivePath "$ARCHIVE1" clean archive
+run_step "Pass1 archive for symbol inventory" "$PASS1_LOG" xcodebuild "${XCBUILD_ARGS[@]}" "${PROV_ARGS[@]:-}" -archivePath "$ARCHIVE1" clean archive
 APP_BIN="$(find "$ARCHIVE1/Products/Applications" -name "$SCHEME.app" -type d | head -n1)/$SCHEME"
 [[ -f "$APP_BIN" ]] || { echo "Unable to locate app binary in archive"; exit 1; }
 
@@ -298,7 +298,7 @@ for src in "${SOURCE_ROOTS[@]}"; do PY_ARGS+=(--source-root "$src"); done
 python3 "${ROOT_DIR}/scripts/ipa_obfuscator/shuffle_macho_symbols.py" "${PY_ARGS[@]}"
 [[ -s "$ORDER_FILE" ]] || { echo "Generated empty order file: $ORDER_FILE"; exit 1; }
 
-run_step "Pass2 archive with randomized layout" "$PASS2_LOG" xcodebuild "${XCBUILD_ARGS[@]}" "${PROV_ARGS[@]}" -archivePath "$ARCHIVE2" OTHER_CFLAGS="\$(inherited) -DOBF_BUILD_SEED=$SEED" OTHER_LDFLAGS="\$(inherited) -Wl,-order_file,${ORDER_FILE}" clean archive
+run_step "Pass2 archive with randomized layout" "$PASS2_LOG" xcodebuild "${XCBUILD_ARGS[@]}" "${PROV_ARGS[@]:-}" -archivePath "$ARCHIVE2" OTHER_CFLAGS="\$(inherited) -DOBF_BUILD_SEED=$SEED" OTHER_LDFLAGS="\$(inherited) -Wl,-order_file,${ORDER_FILE}" clean archive
 
 EXPORT_PATH="${OUT_DIR}/export-${BUILD_TAG}"
 mkdir -p "$EXPORT_PATH"
@@ -309,7 +309,7 @@ if [[ -n "$PROFILE_NAME" ]]; then
   echo "[obf] Applied forced provisioning profile mapping: $PROFILE_NAME"
 fi
 
-run_step "Exporting IPA" "$EXPORT_LOG" xcodebuild -exportArchive "${PROV_ARGS[@]}" -archivePath "$ARCHIVE2" -exportPath "$EXPORT_PATH" -exportOptionsPlist "$EFFECTIVE_EXPORT_PLIST"
+run_step "Exporting IPA" "$EXPORT_LOG" xcodebuild -exportArchive "${PROV_ARGS[@]:-}" -archivePath "$ARCHIVE2" -exportPath "$EXPORT_PATH" -exportOptionsPlist "$EFFECTIVE_EXPORT_PLIST"
 
 IPA_PATH="$(find "$EXPORT_PATH" -name "*.ipa" | head -n1 || true)"
 [[ -n "$IPA_PATH" ]] || { echo "IPA export failed"; exit 1; }
