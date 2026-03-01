@@ -445,7 +445,15 @@ ORDER_FILE="${WORK_DIR}/link.order"
 NOISE_FILE="${TARGET_ROOT}/Obfuscation/Generated/OBFBuildNoise.m"
 mkdir -p "$(dirname "$NOISE_FILE")"
 
-XCBUILD_ARGS=(-scheme "$SCHEME" -configuration "$CONFIG" -derivedDataPath "$DERIVED_DATA" DEVELOPMENT_TEAM="$TEAM_ID" ENABLE_BITCODE=NO)
+XCBUILD_ARGS=(
+  -scheme "$SCHEME"
+  -configuration "$CONFIG"
+  -derivedDataPath "$DERIVED_DATA"
+  DEVELOPMENT_TEAM="$TEAM_ID"
+  ENABLE_BITCODE=NO
+  GCC_TREAT_WARNINGS_AS_ERRORS=NO
+  CLANG_TREAT_WARNINGS_AS_ERRORS=NO
+)
 if [[ -n "$WORKSPACE" ]]; then
   [[ "$WORKSPACE" = /* ]] || WORKSPACE="${TARGET_ROOT}/${WORKSPACE}"
   XCBUILD_ARGS=(-workspace "$WORKSPACE" "${XCBUILD_ARGS[@]}")
