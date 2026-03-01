@@ -203,6 +203,11 @@ bash scripts/ipa_obfuscator/build_obfuscated_ipa.sh \
 
 - 若出现 `xcodebuild: error: Unknown build action "".`：通常是脚本参数展开传入了空 action；当前版本已修复该问题，请确保使用最新版脚本。
 
+- 若出现 `security: SecKeychainItemImport: MAC verification failed during PKCS12 import`：
+  - 通常是 `-W` 提供的 p12 密码不正确。
+  - 请先在钥匙串手工导入验证密码，或重新导出 `.p12` 并使用明确的新密码。
+  - 新版脚本会在该错误出现时输出定向提示和 `security import` 的日志片段。
+
 
 ## 改为在 Xcode Run Script 里混淆（推荐你当前场景）
 

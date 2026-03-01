@@ -81,7 +81,26 @@ setup_signing_certificate() {
   CREATED_TEMP_KEYCHAIN=1
   security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
   security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-  security import "$cert_path" -k "$KEYCHAIN_PATH" -P "$cert_password" -T /usr/bin/codesign -T /usr/bin/security -T /usr/bin/xcodebuild
+
+  local import_log
+  import_log="$(mktemp "${WORK_DIR}/security-import.XXXXXX.log")"
+  if ! security import "$cert_path" -k "$KEYCHAIN_PATH" -P "$cert_password" -T /usr/bin/codesign -T /usr/bin/security -T /usr/bin/xcodebuild >"$import_log" 2>&1; then
+    echo "[error] Failed to import p12 certificate: $cert_path"
+    if grep -q "MAC verification failed" "$import_log"; then
+      cat <<'EOF'
+[hint] security import reported: MAC verification failed during PKCS12 import.
+       Usually this means the -W password is incorrect for the .p12 file.
+       Please verify password by manually importing in Keychain Access,
+       or re-export the certificate as .p12 with a known password.
+EOF
+    fi
+    echo "[hint] security import output:"
+    sed -n '1,40p' "$import_log"
+    rm -f "$import_log"
+    exit 1
+  fi
+  rm -f "$import_log"
+
   security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
   if [[ -n "$ORIGINAL_KEYCHAINS" ]]; then
