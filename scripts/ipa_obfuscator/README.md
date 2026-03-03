@@ -55,11 +55,13 @@ bash scripts/ipa_obfuscator/build_obfuscated_ipa.sh \
 - `-w`: 指定 `.xcworkspace`
 - `-x`: 指定 `.xcodeproj`
 - `-r`: 指定源码扫描目录（可多次）
-- `-k`: padding 大小（KB）
+- `-k`: padding 基础大小（KB）
+- `-j`: padding 随机抖动（KB），每次构建实际 padding = `k..k+j`（默认 `32`）
 - `-n`: 构建 tag（默认时间戳）
 - `-P`: 指定要混淆的目标工程根目录（默认当前仓库根目录）
 - `-m`: 强制给 archive 中所有 bundle id 使用同一个 provisioning profile 名称（导出签名兜底）
 - `-A`: 导出/归档时增加 `-allowProvisioningUpdates`（允许 xcodebuild 自动更新签名资源）
+- `-S`: 严格布局模式（Pass2 若 `order_file` 失败则直接失败，不走 fallback）
 - `-C`: 指定 `.p12` 证书路径（可选，脚本会导入临时 keychain）
 - `-W`: `.p12` 证书密码（与 `-C` 一起使用；也支持 `@/path/to/password.txt`）
 - `-F`: 指定 `.mobileprovision` 文件路径（可多次，脚本会自动安装到 `~/Library/MobileDevice/Provisioning Profiles`）
@@ -88,6 +90,31 @@ bash scripts/ipa_obfuscator/build_obfuscated_ipa.sh \
 - `-C/-W` 会把 p12 导入临时 keychain，仅本次构建使用，脚本结束自动删除。
 - `-F` 可传多次（主 App + appex 多个 profile）。
 - 仍建议配合 `-m`，避免 `provisioningProfiles mapping: <empty>` 导致导出失败。
+
+
+## 最大程度让每次 IPA 二进制都不同（推荐参数）
+
+你这个目标可以通过下面策略尽量拉满：
+- 保持两阶段归档成功（必须让 `-Wl,-order_file` 生效）
+- 开启严格模式 `-S`（避免失败后降级到无 order_file）
+- 增大噪声并启用随机抖动 `-k/-j`（每次 Mach-O 体积与布局差异更大）
+
+推荐命令：
+```bash
+bash scripts/ipa_obfuscator/build_obfuscated_ipa.sh \
+  -P "/path/to/TargetIOSProject" \
+  -s "YourScheme" \
+  -c "Release" \
+  -t "YOUR_TEAM_ID" \
+  -p "/path/to/ExportOptions.plist" \
+  -k 256 \
+  -j 256 \
+  -S
+```
+
+说明：
+- `-S` 会牺牲成功率换强度：只要 `order_file` 失败就不出包。
+- `-k/-j` 越大，二进制差异越明显，但体积和链接时间会增加。
 
 ## 输出
 

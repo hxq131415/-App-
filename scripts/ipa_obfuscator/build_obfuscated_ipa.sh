@@ -29,10 +29,12 @@ Optional:
   -o  Output directory for ipa (default: dist)
   -r  Source root to scan (can be passed multiple times, default target root)
   -k  Binary padding size in KB (default: 64)
+  -j  Random padding jitter in KB (default: 32, final=base..base+jitter)
   -n  Build number tag (default: unix timestamp)
   -P  Target iOS project root directory (default: current repo root)
   -m  Force provisioning profile name for all archive bundle IDs (optional)
   -A  Enable xcodebuild -allowProvisioningUpdates (optional)
+  -S  Strict layout mode: fail if pass2 order_file relink fails (no fallback)
   -C  .p12 signing certificate path (optional)
   -W  .p12 certificate password (or @/path/to/password.txt when -C is used)
   -F  .mobileprovision profile path (can be passed multiple times)
@@ -326,7 +328,7 @@ run_step() {
 run_pass2_archive() {
   local with_order_flags="$1"
   local logfile="$2"
-  if xcodebuild "${ARCHIVE_XCBUILD_ARGS[@]}" -archivePath "$ARCHIVE2" OTHER_CFLAGS="\$(inherited) -DOBF_BUILD_SEED=$SEED" OTHER_LDFLAGS="$with_order_flags" clean archive >"$logfile" 2>&1; then
+  if xcodebuild "${ARCHIVE_XCBUILD_ARGS[@]}" -archivePath "$ARCHIVE2" OTHER_CFLAGS="$PASS2_CFLAGS" OTHER_LDFLAGS="$with_order_flags" clean archive >"$logfile" 2>&1; then
     return 0
   fi
 
@@ -416,6 +418,7 @@ PROJECT=""
 DERIVED_DATA="${WORK_DIR}/DerivedData"
 OUT_DIR="${ROOT_DIR}/dist"
 PADDING_KB=64
+PADDING_JITTER_KB=32
 BUILD_TAG="$(date +%s)"
 SOURCE_ROOTS=()
 TARGET_ROOT="${ROOT_DIR}"
@@ -426,7 +429,7 @@ CERT_PASSWORD=""
 PROFILES=()
 ALLOW_LINK_FALLBACK=1
 
-while getopts ":s:c:t:p:w:x:d:o:r:k:n:P:m:C:W:F:Ah" opt; do
+while getopts ":s:c:t:p:w:x:d:o:r:k:j:n:P:m:C:W:F:ASh" opt; do
   case "$opt" in
     s) SCHEME="$OPTARG" ;;
     c) CONFIG="$OPTARG" ;;
@@ -438,6 +441,7 @@ while getopts ":s:c:t:p:w:x:d:o:r:k:n:P:m:C:W:F:Ah" opt; do
     o) OUT_DIR="$OPTARG" ;;
     r) SOURCE_ROOTS+=("$OPTARG") ;;
     k) PADDING_KB="$OPTARG" ;;
+    j) PADDING_JITTER_KB="$OPTARG" ;;
     n) BUILD_TAG="$OPTARG" ;;
     P) TARGET_ROOT="$OPTARG" ;;
     m) PROFILE_NAME="$OPTARG" ;;
@@ -445,6 +449,7 @@ while getopts ":s:c:t:p:w:x:d:o:r:k:n:P:m:C:W:F:Ah" opt; do
     W) CERT_PASSWORD="$OPTARG" ;;
     F) PROFILES+=("$OPTARG") ;;
     A) ALLOW_PROV_UPDATES=1 ;;
+    S) ALLOW_LINK_FALLBACK=0 ;;
     h) usage; exit 0 ;;
     :) echo "Option -$OPTARG requires an argument"; usage; exit 1 ;;
     \?) echo "Invalid option: -$OPTARG"; usage; exit 1 ;;
@@ -489,6 +494,11 @@ normalize_export_plist "$EXPORT_PLIST" "$NORMALIZED_EXPORT_PLIST" || { echo "Inv
 EXPORT_PLIST="$NORMALIZED_EXPORT_PLIST"
 
 SEED="${BUILD_TAG}-$(uuidgen | tr '[:upper:]' '[:lower:]')"
+BUILD_NONCE="$(uuidgen | tr '[:upper:]' '[:lower:]')"
+RANDOM_PAD_KB="$PADDING_KB"
+if [[ "$PADDING_JITTER_KB" =~ ^[0-9]+$ ]] && [[ "$PADDING_JITTER_KB" -gt 0 ]]; then
+  RANDOM_PAD_KB=$((PADDING_KB + RANDOM % (PADDING_JITTER_KB + 1)))
+fi
 ARCHIVE1="${WORK_DIR}/pass1.xcarchive"
 ARCHIVE2="${WORK_DIR}/pass2.xcarchive"
 ORDER_FILE="${WORK_DIR}/link.order"
@@ -526,17 +536,19 @@ run_pass1_archive || exit 1
 APP_BIN="$(find "$ARCHIVE1/Products/Applications" -name "$SCHEME.app" -type d | head -n1)/$SCHEME"
 [[ -f "$APP_BIN" ]] || { echo "Unable to locate app binary in archive"; exit 1; }
 
-PY_ARGS=(--seed "$SEED" --binary "$APP_BIN" --order-file "$ORDER_FILE" --noise-file "$NOISE_FILE" --size-kb "$PADDING_KB")
+PY_ARGS=(--seed "$SEED" --binary "$APP_BIN" --order-file "$ORDER_FILE" --noise-file "$NOISE_FILE" --size-kb "$RANDOM_PAD_KB")
 for src in "${SOURCE_ROOTS[@]}"; do PY_ARGS+=(--source-root "$src"); done
 python3 "${ROOT_DIR}/scripts/ipa_obfuscator/shuffle_macho_symbols.py" "${PY_ARGS[@]}"
 [[ -s "$ORDER_FILE" ]] || { echo "Generated empty order file: $ORDER_FILE"; exit 1; }
 sync_legacy_order_file_paths "$ORDER_FILE" "$PASS1_LOG"
 
+PASS2_CFLAGS="\$(inherited) -DOBF_BUILD_SEED=$SEED -DOBF_BUILD_NONCE=$BUILD_NONCE"
 if ! run_pass2_archive "\$(inherited) -Wl,-order_file,${ORDER_FILE}" "$PASS2_LOG"; then
   if [[ "$ALLOW_LINK_FALLBACK" -eq 1 ]]; then
     echo "[warn] Retrying Pass2 archive without order_file to avoid linker compatibility failures."
-    run_step "Pass2 archive fallback (without order_file)" "$PASS2_RETRY_LOG" xcodebuild "${ARCHIVE_XCBUILD_ARGS[@]}" -archivePath "$ARCHIVE2" OTHER_CFLAGS="\$(inherited) -DOBF_BUILD_SEED=$SEED" OTHER_LDFLAGS="\$(inherited)" clean archive
+    run_step "Pass2 archive fallback (without order_file)" "$PASS2_RETRY_LOG" xcodebuild "${ARCHIVE_XCBUILD_ARGS[@]}" -archivePath "$ARCHIVE2" OTHER_CFLAGS="$PASS2_CFLAGS" OTHER_LDFLAGS="\$(inherited)" clean archive
   else
+    echo "[error] Strict layout mode enabled (-S): not falling back without order_file."
     exit 1
   fi
 fi
