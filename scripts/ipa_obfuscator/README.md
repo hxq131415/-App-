@@ -157,6 +157,10 @@ grep -nE "Undefined symbols|duplicate symbol|ld:|clang: error|error:" .obf_build
 - 若工程把 warning 当 error（`-Werror`）导致 Archive 失败：
   - 脚本现在默认注入 `GCC_TREAT_WARNINGS_AS_ERRORS=NO` 与 `CLANG_TREAT_WARNINGS_AS_ERRORS=NO`，避免历史告警阻断打包。
 
+- 若工程里有历史 `-Wl,-order_file,/some/old/order.txt` 且路径不存在：
+  - 脚本会先在 Pass1 失败后自动创建占位文件以解除 Xcode 的输入文件检查。
+  - 生成新的 `.obf_build/link.order` 后，脚本会自动同步到这些历史 `order.txt/order.file` 路径，避免后续链接再次报文件不存在。
+
 - 若一次归档（Pass1）就报 `Build input file cannot be found ... order.txt/order.file`：
   - 说明工程本身残留了失效的 `OTHER_LDFLAGS` 里的 `-Wl,-order_file,...` 路径。
   - 新版脚本会自动识别并重试 Pass1（临时注入 `OTHER_LDFLAGS=$(inherited)`）以绕过该历史配置。

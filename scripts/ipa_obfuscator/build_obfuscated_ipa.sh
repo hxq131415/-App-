@@ -346,6 +346,31 @@ run_pass1_archive() {
 
   if grep -qE 'Build input file cannot be found: .*order\.(txt|file)' "$PASS1_LOG" || grep -q -- '-Wl,-order_file' "$PASS1_LOG"; then
     echo "[warn] Detected stale project order_file setting. Retrying Pass1 with sanitized OTHER_LDFLAGS=\$(inherited)."
+
+    while IFS= read -r missing_path; do
+      [[ -n "$missing_path" ]] || continue
+      mkdir -p "$(dirname "$missing_path")"
+      : > "$missing_path"
+      echo "[obf] Created placeholder order_file for stale project setting: $missing_path"
+    done < <(python3 - "$PASS1_LOG" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+log = Path(sys.argv[1]).read_text(encoding='utf-8', errors='ignore')
+patterns = [
+    r"Build input file cannot be found: '([^']*order\.(?:txt|file))'",
+    r"-Wl,-order_file,([^\s]+order\.(?:txt|file))",
+]
+seen = set()
+for pat in patterns:
+    for m in re.findall(pat, log):
+        if m not in seen:
+            seen.add(m)
+            print(m)
+PY
+)
+
     if xcodebuild "${ARCHIVE_XCBUILD_ARGS[@]}" -archivePath "$ARCHIVE1" OTHER_LDFLAGS="\$(inherited)" clean archive >"$PASS1_RETRY_LOG" 2>&1; then
       echo "[obf] Pass1 retry succeeded. Retry log: $PASS1_RETRY_LOG"
       return 0
@@ -355,6 +380,31 @@ run_pass1_archive() {
   fi
 
   return 1
+}
+
+sync_legacy_order_file_paths() {
+  local source_order_file="$1"
+  local scan_log="$2"
+  while IFS= read -r legacy_path; do
+    [[ -n "$legacy_path" ]] || continue
+    if [[ "$legacy_path" != "$source_order_file" ]]; then
+      mkdir -p "$(dirname "$legacy_path")"
+      cp "$source_order_file" "$legacy_path"
+      echo "[obf] Synced generated order_file to legacy path: $legacy_path"
+    fi
+  done < <(python3 - "$scan_log" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+log = Path(sys.argv[1]).read_text(encoding='utf-8', errors='ignore')
+seen = set()
+for m in re.findall(r"-Wl,-order_file,([^\s]+order\.(?:txt|file))", log):
+    if m not in seen:
+        seen.add(m)
+        print(m)
+PY
+)
 }
 
 SCHEME=""
@@ -480,6 +530,7 @@ PY_ARGS=(--seed "$SEED" --binary "$APP_BIN" --order-file "$ORDER_FILE" --noise-f
 for src in "${SOURCE_ROOTS[@]}"; do PY_ARGS+=(--source-root "$src"); done
 python3 "${ROOT_DIR}/scripts/ipa_obfuscator/shuffle_macho_symbols.py" "${PY_ARGS[@]}"
 [[ -s "$ORDER_FILE" ]] || { echo "Generated empty order file: $ORDER_FILE"; exit 1; }
+sync_legacy_order_file_paths "$ORDER_FILE" "$PASS1_LOG"
 
 if ! run_pass2_archive "\$(inherited) -Wl,-order_file,${ORDER_FILE}" "$PASS2_LOG"; then
   if [[ "$ALLOW_LINK_FALLBACK" -eq 1 ]]; then
