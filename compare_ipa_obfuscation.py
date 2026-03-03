@@ -186,7 +186,7 @@ def print_report(before: IpaMetrics, after: IpaMetrics) -> None:
 
     def row(name: str, b: float, a: float, digits: int = 2):
         delta = a - b
-        fmt = f"{{:<24}}{{:>14.{digits}f}}{{:>14.{digits}f}}{{:>14+.{digits}f}}"
+        fmt = f"{{:<24}}{{:>14.{digits}f}}{{:>14.{digits}f}}{{:>+14.{digits}f}}"
         print(fmt.format(name, b, a, delta))
 
     row("Mach-O 文件数", float(before.macho_files), float(after.macho_files), 0)
