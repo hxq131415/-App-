@@ -1,0 +1,164 @@
+#!/usr/bin/env python3
+"""Generate randomized linker order file + ObjC noise source for per-build binary diversification."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import os
+import random
+import re
+import subprocess
+from pathlib import Path
+
+FUNCTION_RE = re.compile(r"^[_A-Za-z][_A-Za-z0-9$]*$")
+
+
+def run(cmd: list[str]) -> str:
+    proc = subprocess.run(cmd, check=True, capture_output=True, text=True)
+    return proc.stdout
+
+
+def load_text(path: Path) -> str:
+    return path.read_text(encoding="utf-8", errors="ignore")
+
+
+def collect_objc_tokens(source_roots: list[Path]) -> tuple[list[str], list[str], list[str]]:
+    classes: set[str] = set()
+    selectors: set[str] = set()
+    c_functions: set[str] = set()
+
+    meth_re = re.compile(r"^[ \t]*[-+]\s*\([^)]*\)\s*([A-Za-z_][A-Za-z0-9_]*)", re.M)
+    cls_re = re.compile(r"@interface\s+([A-Za-z_][A-Za-z0-9_]*)")
+    cfunc_re = re.compile(
+        r"^[ \t]*(?:static\s+)?(?:inline\s+)?(?:extern\s+)?(?:const\s+)?"
+        r"(?:[A-Za-z_][A-Za-z0-9_\s\*]+)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\([^;]*\)\s*\{",
+        re.M,
+    )
+
+    for root in source_roots:
+        for path in root.rglob("*"):
+            if path.suffix not in {".m", ".mm", ".c", ".cc", ".cpp"}:
+                continue
+            if "/Pods/" in str(path) or str(path).endswith("Pods"):
+                continue
+            data = load_text(path)
+            classes.update(cls_re.findall(data))
+            selectors.update(meth_re.findall(data))
+            c_functions.update(name for name in cfunc_re.findall(data) if FUNCTION_RE.match(name))
+
+    return sorted(classes), sorted(selectors), sorted(c_functions)
+
+
+def extract_binary_symbols(binary: Path) -> tuple[list[str], list[str], list[str], list[str]]:
+    nm_out = run(["xcrun", "nm", "-nm", str(binary)])
+    class_symbols: list[str] = []
+    selref_symbols: list[str] = []
+    method_symbols: list[str] = []
+    function_symbols: list[str] = []
+
+    for line in nm_out.splitlines():
+        parts = line.split()
+        if not parts:
+            continue
+        symbol = parts[-1]
+        if symbol.startswith("_OBJC_CLASS_$_"):
+            class_symbols.append(symbol)
+        elif "OBJC_SELECTOR_REFERENCES_" in symbol or "__objc_selrefs" in symbol:
+            selref_symbols.append(symbol)
+        elif "__OBJC_$_" in symbol and "METHOD" in symbol.upper():
+            method_symbols.append(symbol)
+        elif symbol.startswith("_") and "$" not in symbol and "objc" not in symbol.lower():
+            function_symbols.append(symbol)
+
+    return class_symbols, selref_symbols, method_symbols, function_symbols
+
+
+def deterministic_shuffle(items: list[str], seed: str, salt: str) -> list[str]:
+    rng = random.Random(hashlib.sha256(f"{seed}:{salt}".encode()).digest())
+    out = items[:]
+    rng.shuffle(out)
+    return out
+
+
+def write_order_file(path: Path, chunks: list[list[str]]) -> None:
+    lines: list[str] = []
+    for chunk in chunks:
+        for sym in chunk:
+            lines.append(sym)
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def write_noise_source(path: Path, seed: str, selectors: list[str], classes: list[str], functions: list[str], size_kb: int) -> None:
+    rng = random.Random(hashlib.sha256(f"noise:{seed}".encode()).digest())
+    selectors = deterministic_shuffle(selectors, seed, "sel")[: min(64, len(selectors))]
+    classes = deterministic_shuffle(classes, seed, "cls")[: min(32, len(classes))]
+    functions = deterministic_shuffle(functions, seed, "fn")[: min(64, len(functions))]
+
+    pad = bytes(rng.getrandbits(8) for _ in range(size_kb * 1024))
+    pad_literal = ",".join(f"0x{b:02x}" for b in pad)
+
+    lines = [
+        "#import <Foundation/Foundation.h>",
+        "#import <objc/runtime.h>",
+        "",
+        "__attribute__((used, section(\"__DATA,__obfpad\")))",
+        f"static const unsigned char kBuildPad[] = {{{pad_literal}}};",
+        "",
+        "__attribute__((constructor)) static void obf_touch_symbols(void) {",
+        "    (void)kBuildPad;",
+    ]
+
+    for sel in selectors:
+        lines.append(f"    (void)sel_registerName(\"{sel}\");")
+    for cls in classes:
+        lines.append(f"    (void)objc_getClass(\"{cls}\");")
+
+    lines.append("}")
+    lines.append("")
+
+    for idx, fn in enumerate(functions):
+        lines.extend(
+            [
+                f"__attribute__((noinline, used)) static int obf_fn_{idx}(int x) {{",
+                f"    return x ^ {rng.randint(3, 65535)};",
+                "}",
+                "",
+            ]
+        )
+
+    path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--seed", required=True)
+    parser.add_argument("--binary")
+    parser.add_argument("--source-root", action="append", required=True)
+    parser.add_argument("--order-file", required=True)
+    parser.add_argument("--noise-file", required=True)
+    parser.add_argument("--size-kb", type=int, default=64)
+    parser.add_argument("--skip-binary", action="store_true")
+    args = parser.parse_args()
+
+    classes, selectors, functions = collect_objc_tokens([Path(x) for x in args.source_root])
+
+    if args.skip_binary:
+        c_syms, s_syms, m_syms, f_syms = [], [], [], []
+    else:
+        if not args.binary:
+            raise SystemExit("--binary is required unless --skip-binary is set")
+        c_syms, s_syms, m_syms, f_syms = extract_binary_symbols(Path(args.binary))
+
+    ordered = [
+        deterministic_shuffle(c_syms, args.seed, "classlist"),
+        deterministic_shuffle(s_syms, args.seed, "selrefs"),
+        deterministic_shuffle(m_syms, args.seed, "methodlist"),
+        deterministic_shuffle(f_syms, args.seed, "functions"),
+    ]
+    write_order_file(Path(args.order_file), ordered)
+    write_noise_source(Path(args.noise_file), args.seed, selectors, classes, functions, args.size_kb)
+
+
+if __name__ == "__main__":
+    main()
