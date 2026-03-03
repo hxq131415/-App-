@@ -31,6 +31,12 @@ class TestReportFormatting(unittest.TestCase):
             mean_len=7.1,
             entropy_mean=2.6,
             obfuscation_score=45.0,
+            private_api_hits=0,
+            jailbreak_hits=0,
+            dynamic_code_hits=1,
+            ats_risk_hits=0,
+            private_framework_hits=0,
+            review_risk_score=3.0,
         )
         after = cmp.IpaMetrics(
             ipa_path=Path("after.ipa"),
@@ -42,10 +48,28 @@ class TestReportFormatting(unittest.TestCase):
             mean_len=7.6,
             entropy_mean=2.9,
             obfuscation_score=55.0,
+            private_api_hits=0,
+            jailbreak_hits=0,
+            dynamic_code_hits=1,
+            ats_risk_hits=0,
+            private_framework_hits=0,
+            review_risk_score=3.0,
         )
 
         # Should not raise ValueError for integer-format rows.
         cmp.print_report(before, after)
+
+
+class TestReviewRisk(unittest.TestCase):
+    def test_review_risk_score_weighted(self):
+        score = cmp.score_review_risk(
+            private_api_hits=2,
+            jailbreak_hits=1,
+            dynamic_code_hits=3,
+            ats_risk_hits=0,
+            private_framework_hits=1,
+        )
+        self.assertEqual(score, 29)
 
 
 if __name__ == "__main__":
