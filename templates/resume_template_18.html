@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>简历模板18·18_皇家蓝</title>
+<style>
+:root {
+  --bg:#eff6ff;
+  --card:#ffffff;
+  --primary:#1e3a8a;
+  --secondary:#2563eb;
+  --text:#1e293b;
+  --muted:#64748b;
+  --border:#bfdbfe;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);font-family:'Cambria','PingFang SC',serif;color:var(--text);padding:24px;}
+.page{max-width:960px;margin:0 auto;background:var(--card);border-radius:10px;overflow:hidden;box-shadow:0 14px 38px rgba(0,0,0,.12);border:1px solid #dbeafe;}
+.header{background:linear-gradient(135deg,#1e3a8a,#1d4ed8);color:#fff;padding:30px 36px;display:flex;justify-content:space-between;align-items:flex-start;}
+.header-left h1{margin:0;font-size:34px;letter-spacing:1px;}
+.job{margin-top:8px;font-size:17px;opacity:.95;}
+.header-right{text-align:right;line-height:1.9;font-size:14px;}
+.section{padding:24px 36px;border-bottom:1px solid var(--border);}
+.section:last-child{border-bottom:none;}
+.section-title{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+.title-left{background:var(--primary);color:#fff;padding:8px 18px;border-radius:6px;font-weight:700;letter-spacing:2px;}
+.title-right{height:2px;background:linear-gradient(90deg,var(--primary),transparent);flex:1;}
+.basic-wrapper{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;}
+.basic-grid{display:grid;grid-template-columns:repeat(3,minmax(120px,1fr));gap:10px 20px;font-size:14px;flex:1;}
+.basic-grid div span{font-weight:700;color:var(--secondary);}
+.avatar{width:140px;height:180px;object-fit:cover;border-radius:12px;border:4px solid #bfdbfe;background:#f0f0f0;}
+.exp-item{margin-bottom:16px;}
+.exp-head{display:flex;justify-content:space-between;gap:12px;font-weight:700;}
+.exp-sub{margin-top:3px;color:var(--muted);}
+ul{margin:8px 0 0 18px;padding:0;}
+li{line-height:1.75;}
+.edu-item{display:flex;justify-content:space-between;gap:10px;font-weight:700;}
+.edu-desc{margin:6px 0 14px;color:var(--muted);line-height:1.7;}
+.desc{line-height:1.9;font-size:14px;white-space:pre-wrap;}
+@media (max-width:768px){
+  body{padding:10px;}
+  .header{flex-direction:column;gap:14px;}
+  .header-right{text-align:left;}
+  .basic-wrapper{flex-direction:column;}
+  .avatar{width:120px;height:150px;}
+  .basic-grid{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div class="header-left">
+      <h1 id="name"></h1>
+      <div class="job">求职意向：<span id="job_intent"></span></div>
+    </div>
+    <div class="header-right">
+      <div>📞 <span id="phone"></span></div>
+      <div>✉ <span id="email"></span></div>
+      <div>📍 <span id="location"></span></div>
+    </div>
+  </div>
+
+  <div class="section" id="basicSection">
+    <div class="section-title"><div class="title-left">基本资料</div><div class="title-right"></div></div>
+    <div class="basic-wrapper">
+      <div class="basic-grid">
+        <div>出生年月：<span id="birthday"></span></div>
+      </div>
+      <img id="avatar" class="avatar" alt="头像"/>
+    </div>
+  </div>
+
+  <div class="section" id="selfSection"><div class="section-title"><div class="title-left">自我评价</div><div class="title-right"></div></div><div id="self_eval" class="desc"></div></div>
+  <div class="section" id="jobsSection"><div class="section-title"><div class="title-left">工作经历</div><div class="title-right"></div></div><div id="jobs"></div></div>
+  <div class="section" id="internshipsSection"><div class="section-title"><div class="title-left">实习经历</div><div class="title-right"></div></div><div id="internships"></div></div>
+  <div class="section" id="projectsSection"><div class="section-title"><div class="title-left">项目经历</div><div class="title-right"></div></div><div id="projects"></div></div>
+  <div class="section" id="educationSection"><div class="section-title"><div class="title-left">教育背景</div><div class="title-right"></div></div><div id="education"></div></div>
+</div>
+<script>
+function hideIfEmpty(id, arr){if(!arr || arr.length===0){document.getElementById(id).style.display='none';}}
+function renderExperience(id, arr){const el=document.getElementById(id);if(!Array.isArray(arr)) return;el.innerHTML=arr.map(i=>`<div class="exp-item"><div class="exp-head"><div>${i.org||""}${i.title?" | "+i.title:""}</div><div>${i.time||""}</div></div>${i.role?`<div class="exp-sub">${i.role}</div>`:""}${Array.isArray(i.lines)?`<ul>${i.lines.map(l=>`<li>${l}</li>`).join("")}</ul>`:""}</div>`).join('');}
+function renderEducation(arr){const el=document.getElementById('education');if(!Array.isArray(arr)) return;el.innerHTML=arr.map(i=>`<div class="edu-item"><div>${i.org||""} | ${i.title||""}</div><div>${i.time||""}</div></div>${Array.isArray(i.lines)?`<div class="edu-desc">${i.lines.join('；')}</div>`:""}`).join('');}
+function setResumeData(d){
+  document.getElementById('name').innerText=d.name||'';
+  document.getElementById('job_intent').innerText=d.job_intent||'';
+  document.getElementById('phone').innerText=d.phone||'';
+  document.getElementById('email').innerText=d.email||'';
+  document.getElementById('location').innerText=d.location||'';
+  document.getElementById('birthday').innerText=d.birthday||'';
+  document.getElementById('avatar').src=d.avatar||'';
+  document.getElementById('self_eval').innerText=d.self_eval||'';
+  renderExperience('jobs', d.jobs);
+  renderExperience('internships', d.internships);
+  renderExperience('projects', d.projects);
+  renderEducation(d.education);
+  hideIfEmpty('jobsSection', d.jobs);
+  hideIfEmpty('internshipsSection', d.internships);
+  hideIfEmpty('projectsSection', d.projects);
+  hideIfEmpty('educationSection', d.education);
+}
+</script>
+</body>
+</html>
