@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>简历模板19·19_夜空</title>
+<style>
+*{box-sizing:border-box} body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",Arial;color:var(--text);padding:clamp(8px,2vw,24px)}
+:root{--bg:#0b1120;--card:#111827;--primary:#6366f1;--primary2:#3730a3;--text:#e5e7eb;--muted:#cbd5e1;--line:#334155;--tag:#1e293b;}
+.page{width:min(1100px,100%);margin:0 auto}
+h1{margin:0;font-size:clamp(26px,4vw,36px)} .job{margin-top:8px;font-size:clamp(14px,2.2vw,18px)}
+.header-right{font-size:14px;line-height:1.8} .avatar{width:130px;height:170px;object-fit:cover;border:4px solid var(--line);border-radius:12px;background:#fff;max-width:100%}
+.section{min-width:0} .section-title{display:flex;align-items:center;gap:10px;margin-bottom:12px} .title-left{font-weight:700}
+.exp-item{margin-bottom:14px} .exp-head{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-weight:700} .exp-sub{margin-top:4px;color:var(--muted)}
+ul{margin:8px 0 0 18px;padding:0} li{line-height:1.72} .edu-item{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-weight:700} .edu-desc{margin:6px 0 12px;color:var(--muted);line-height:1.72} .desc{line-height:1.82;white-space:pre-wrap}
+ .header{display:flex;justify-content:space-between;background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;padding:24px 28px;border-radius:14px;margin-bottom:12px} .section{padding:16px 18px;background:var(--card);border-radius:14px;box-shadow:0 8px 18px rgba(0,0,0,.08);margin-bottom:12px} .title-left{background:var(--tag);padding:5px 12px;border-radius:8px;color:var(--primary)} .title-right{height:2px;flex:1;background:var(--line)} .basic-wrapper{display:flex;justify-content:space-between;gap:14px;align-items:center} .basic-grid{display:grid;grid-template-columns:repeat(2,minmax(120px,1fr));gap:10px 12px;flex:1}
+@media (max-width: 900px){
+  .desktop-2col{grid-template-columns:1fr!important}
+}
+@media (max-width: 760px){
+  body{padding:8px}
+  .page,.main{display:block!important;grid-template-columns:1fr!important}
+  .header{display:block!important;grid-template-columns:1fr!important;gap:10px!important}
+  .section{padding:14px!important}
+  .basic-wrapper{display:block!important}
+  .basic-grid{grid-template-columns:1fr 1fr!important}
+  .header-right{text-align:left!important}
+  .avatar{width:108px;height:140px;margin-top:10px}
+  .split-panels{grid-template-columns:1fr!important;gap:10px!important}
+}
+</style></head><body><div class="page"><div class="header"><div><h1 id="name"></h1><div class="job">求职意向：<span id="job_intent"></span></div></div><div class="header-right"><div>📞 <span id="phone"></span></div><div>✉ <span id="email"></span></div><div>📍 <span id="location"></span></div></div></div>
+<div class="section" id="basicSection"><div class="section-title"><div class="title-left">基本资料</div><div class="title-right"></div></div><div class="basic-wrapper"><div class="basic-grid"><div>出生年月：<span id="birthday"></span></div></div><img id="avatar" class="avatar" alt="头像"></div></div>
+<div class="section" id="selfSection"><div class="section-title"><div class="title-left">自我评价</div><div class="title-right"></div></div><div id="self_eval" class="desc"></div></div>
+<div class="split-panels desktop-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div class="section" id="jobsSection"><div class="section-title"><div class="title-left">工作经历</div><div class="title-right"></div></div><div id="jobs"></div></div><div class="section" id="projectsSection"><div class="section-title"><div class="title-left">项目经历</div><div class="title-right"></div></div><div id="projects"></div></div></div>
+<div class="split-panels desktop-2col" style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><div class="section" id="internshipsSection"><div class="section-title"><div class="title-left">实习经历</div><div class="title-right"></div></div><div id="internships"></div></div><div class="section" id="educationSection"><div class="section-title"><div class="title-left">教育背景</div><div class="title-right"></div></div><div id="education"></div></div></div></div><script>
+function hideIfEmpty(id, arr){
+  if(!arr || arr.length===0){
+    const node=document.getElementById(id);
+    if(node) node.style.display='none';
+  }
+}
+function renderExperience(id, arr){
+  const el=document.getElementById(id);
+  if(!Array.isArray(arr) || !el) return;
+  el.innerHTML=arr.map(i=>`<div class="exp-item"><div class="exp-head"><div>${i.org||''}${i.title?' | '+i.title:''}</div><div>${i.time||''}</div></div>${i.role?`<div class="exp-sub">${i.role}</div>`:''}${Array.isArray(i.lines)?`<ul>${i.lines.map(l=>`<li>${l}</li>`).join('')}</ul>`:''}</div>`).join('');
+}
+function renderEducation(arr){
+  const el=document.getElementById('education');
+  if(!Array.isArray(arr) || !el) return;
+  el.innerHTML=arr.map(i=>`<div class="edu-item"><div class="edu-left">${i.org||''} | ${i.title||''}</div><div>${i.time||''}</div></div>${Array.isArray(i.lines)?`<div class="edu-desc">${i.lines.join('；')}</div>`:''}`).join('');
+}
+function setResumeData(d){
+  document.getElementById('name').innerText=d.name||'';
+  document.getElementById('job_intent').innerText=d.job_intent||'';
+  document.getElementById('phone').innerText=d.phone||'';
+  document.getElementById('email').innerText=d.email||'';
+  document.getElementById('location').innerText=d.location||'';
+  document.getElementById('birthday').innerText=d.birthday||'';
+  document.getElementById('avatar').src=d.avatar||'';
+  document.getElementById('self_eval').innerText=d.self_eval||'';
+  renderExperience('jobs',d.jobs);
+  renderExperience('internships',d.internships);
+  renderExperience('projects',d.projects);
+  renderEducation(d.education);
+  hideIfEmpty('jobsSection',d.jobs);
+  hideIfEmpty('internshipsSection',d.internships);
+  hideIfEmpty('projectsSection',d.projects);
+  hideIfEmpty('educationSection',d.education);
+}
+</script></body></html>
