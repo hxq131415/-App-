@@ -1,17 +1,17 @@
 # Resume Template Pro - 20 套可直接对接 OC/HTML 的简历模板
 
-这批模板严格保持你提供的数据填充格式：
-- 统一 DOM id：`name`、`job_intent`、`phone`、`email`、`location`、`birthday`、`avatar`、`self_eval`、`jobs`、`internships`、`projects`、`education`
-- 统一函数签名：`setResumeData(d)`、`renderExperience(id, arr)`、`renderEducation(arr)`、`hideIfEmpty(id, arr)`
+## 数据填充格式（与您提供的一致）
+- DOM id：`name`、`job_intent`、`phone`、`email`、`location`、`birthday`、`avatar`、`self_eval`、`jobs`、`internships`、`projects`、`education`
+- 函数签名：`setResumeData(d)`、`renderExperience(id, arr)`、`renderEducation(arr)`、`hideIfEmpty(id, arr)`
 
-## 排版类型（更丰富）
-- A 类：现代单栏（1,6,11,16）
-- B 类：左侧边栏（2,7,12,17）
-- C 类：时间轴风格（3,8,13,18）
-- D 类：卡片网格（4,9,14,19）
-- E 类：分栏头部（5,10,15,20）
+## 双端适配
+- 所有模板都包含手机端断点（760px）和中屏断点（900px）
+- 手机端会自动单栏化、缩小留白、头像和双栏内容改为纵向布局
 
-## 使用方式
+## 预览
+- 打开 `preview.html` 可查看 20 个模板入口（手机/电脑均可浏览）
+
+## 使用
 ```html
 <script>
 setResumeData(yourResumeData);
