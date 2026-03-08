@@ -1,0 +1,39 @@
+{
+  "site": {
+    "base_url": "https://example.com",
+    "brand": "Resume Master",
+    "app_name": "Resume Master App",
+    "default_download_url": "https://example.com/download",
+    "default_scan_text": "扫码下载简历模板 App",
+    "language": "zh-CN"
+  },
+  "pages": [
+    {
+      "slug": "resume-template-for-students",
+      "title": "大学生简历模板免费下载 - Resume Master",
+      "description": "精选大学生简历模板，支持一键生成与导出，扫码即可下载 Resume Master App。",
+      "keywords": ["大学生简历模板", "简历模板下载", "应届生简历"],
+      "h1": "大学生简历模板",
+      "intro": "适合应届生、实习生投递岗位，结构清晰、通过率高。",
+      "download_url": "https://example.com/download/student"
+    },
+    {
+      "slug": "product-manager-resume-template",
+      "title": "产品经理简历模板下载 - Resume Master",
+      "description": "产品经理简历模板合集，覆盖校招与社招场景，快速生成专业简历。",
+      "keywords": ["产品经理简历模板", "PM简历", "简历制作"],
+      "h1": "产品经理简历模板",
+      "intro": "突出项目成果与数据指标，帮助产品经理提升面试邀约率。",
+      "download_url": "https://example.com/download/pm"
+    },
+    {
+      "slug": "ui-designer-resume-template",
+      "title": "UI 设计师简历模板 - 高颜值可编辑",
+      "description": "UI 设计师专用简历模板，展示作品与设计流程，扫码下载 App 即刻使用。",
+      "keywords": ["UI设计师简历", "设计简历模板", "简历模板"],
+      "h1": "UI 设计师简历模板",
+      "intro": "强调视觉与项目亮点，适用于互联网与创意岗位投递。",
+      "download_url": "https://example.com/download/ui"
+    }
+  ]
+}
