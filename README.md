@@ -3,7 +3,7 @@
 按“官网落地页风格模板”批量生成简历模板 SEO 页面，满足：
 
 - 生成 **200 个简历模板 SEO 关键词**。
-- 每页自动生成 SEO 信息（`title`、`description`、`keywords`、`canonical`、正文）。
+- 每页自动生成 SEO 信息（`title`、`description`、`keywords`、`canonical`、`h1`、正文）。
 - 批量生成 HTML 页面（页面结构与示例模板一致：Hero、热门模板、评价、FAQ、CTA、Footer）。
 - 自动生成 `sitemap.xml`。
 
@@ -34,3 +34,14 @@ python3 scripts/generate_resume_pages.py \
 - `images/template1.png` ~ `images/template8.png`
 
 部署时请确保这些图片资源可访问。
+
+
+## 差异化内容
+
+每个页面会联动关键词自动变化：
+
+- 标题、description、keywords、H1
+- SEO正文段落
+- FAQ（岗位描述与模板优势问答）
+- 用户评价（岗位/城市/文案联动）
+- 相关推荐卡片

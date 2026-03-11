@@ -46,24 +46,8 @@ INDUSTRIES = [
 ]
 
 STYLE_TAGS = ["可编辑", "Word版", "PDF版", "一页式", "ATS友好"]
-REVIEW_ITEMS = [
-    "★★★★★ 模板设计很专业。<br><strong>王志强 · Java工程师 · 北京</strong>",
-    "★★★★★ 应届生非常适合。<br><strong>刘思雨 · 应届毕业生 · 上海</strong>",
-    "★★★★★ 简历通过率明显提高。<br><strong>陈凯 · 产品经理 · 深圳</strong>",
-    "★★★★★ 模板很多很好用。<br><strong>赵磊 · 销售经理 · 广州</strong>",
-]
-FAQ_ITEMS = [
-    ("简历模板怎么下载？", "扫码下载APP即可获取全部模板。"),
-    ("模板可以免费使用吗？", "APP提供免费模板。"),
-    ("支持哪些格式？", "支持 Word 和 PDF。"),
-    ("适合应届生吗？", "提供应届生专用模板。"),
-    ("模板可以编辑吗？", "所有模板均支持编辑。"),
-    ("可以打印吗？", "支持导出PDF打印。"),
-    ("适合哪些行业？", "覆盖互联网、销售、金融、教育等行业。"),
-    ("多久更新模板？", "每月新增模板。"),
-    ("手机可以编辑吗？", "APP支持手机编辑。"),
-    ("支持招聘网站投递吗？", "支持各大招聘平台。"),
-]
+CITIES = ["北京", "上海", "深圳", "广州", "杭州", "成都", "南京", "武汉"]
+NAMES = ["王志强", "刘思雨", "陈凯", "赵磊", "周雨晨", "林嘉宁", "孙博文", "何雅婷"]
 
 
 @dataclass
@@ -71,6 +55,9 @@ class PageData:
     idx: int
     keyword: str
     slug: str
+    industry: str
+    base: str
+    style: str
 
 
 def slugify(text: str) -> str:
@@ -84,15 +71,60 @@ def slugify(text: str) -> str:
     return "resume-" + "".join(safe_chars)
 
 
-def build_keywords(total: int = 200) -> list[str]:
-    keywords: list[str] = []
+def build_keywords(total: int = 200) -> list[tuple[str, str, str]]:
+    combos: list[tuple[str, str, str]] = []
     for base in BASE_KEYWORDS:
         for industry in INDUSTRIES:
             for style in STYLE_TAGS:
-                keywords.append(f"{industry}{base}{style}")
-                if len(keywords) >= total:
-                    return keywords
-    return keywords[:total]
+                combos.append((industry, base, style))
+                if len(combos) >= total:
+                    return combos
+    return combos[:total]
+
+
+def style_hint(style: str) -> str:
+    mapping = {
+        "可编辑": "适合快速二次修改",
+        "Word版": "便于在 Word 中细致排版",
+        "PDF版": "适合直接投递，版式更稳定",
+        "一页式": "信息更聚焦，适合校招与初筛",
+        "ATS友好": "关键词命中率更高，更易通过筛选",
+    }
+    return mapping.get(style, "支持多场景求职")
+
+
+def seo_paragraphs(page: PageData) -> tuple[str, str]:
+    p1 = (
+        f"{page.keyword}专题为 {page.industry} 方向求职者定制，覆盖个人优势、项目经历、成果数据与岗位关键词布局。"
+        f"本页模板强调“{style_hint(page.style)}”，可用于校招、社招与转岗场景。"
+    )
+    p2 = (
+        f"如果你正在准备 {page.industry} 岗位面试，建议优先补充与 JD 对齐的技能词，并用量化结果呈现价值。"
+        f"例如“负责 A/B 测试后转化率提升 27%”“独立交付 3 个版本上线”。"
+    )
+    return p1, p2
+
+
+def build_faq(page: PageData) -> list[tuple[str, str]]:
+    return [
+        (f"{page.keyword}适合哪些人？", f"适合目标岗位为{page.industry}的求职者，尤其适配{page.base}场景。"),
+        (f"{page.industry}岗位该突出什么内容？", "建议突出可量化成果、业务目标与协作结果，避免只罗列职责。"),
+        (f"{page.style}模板有什么优势？", style_hint(page.style) + "，同时支持继续扩展项目经历与技能模块。"),
+        ("支持哪些文件格式？", "支持 Word 编辑与 PDF 导出，方便修改和投递。"),
+        ("可以用于招聘网站投递吗？", "可以，页面结构遵循主流招聘系统识别逻辑。"),
+    ]
+
+
+def build_reviews(page: PageData) -> list[str]:
+    roles = [page.industry, "产品经理", "运营", "开发工程师"]
+    reviews: list[str] = []
+    for i in range(8):
+        name = NAMES[(page.idx + i) % len(NAMES)]
+        city = CITIES[(page.idx + i) % len(CITIES)]
+        role = roles[i % len(roles)]
+        score_text = ["面试邀约明显增加", "排版很专业", "关键词更容易命中", "修改效率很高"][i % 4]
+        reviews.append(f"★★★★★ {page.keyword}{score_text}。<br><strong>{name} · {role} · {city}</strong>")
+    return reviews
 
 
 def render_related_cards(pages: list[PageData], current_index: int, count: int = 8) -> str:
@@ -108,19 +140,20 @@ def render_related_cards(pages: list[PageData], current_index: int, count: int =
 
 
 def render_page(page: PageData, pages: list[PageData], base_url: str) -> str:
-    title = f"{page.keyword}免费下载 - 应届生简历模板APP"
+    title = f"{page.keyword}免费下载 - {page.industry}高通过率简历模板"
     description = (
-        f"{page.keyword}精选下载，包含应届生、程序员、产品经理等热门岗位模板，"
-        "支持Word编辑与PDF导出，一键生成专业简历。"
+        f"{page.keyword}精选下载，面向{page.industry}岗位，提供{page.style}模板与可复用项目描述，"
+        "支持Word编辑与PDF导出，快速生成专业简历。"
     )
     canonical = f"{base_url.rstrip('/')}/{page.slug}.html"
-    keywords_meta = f"{page.keyword},简历模板,简历模板下载,Word简历模板,免费简历模板"
+    keywords_meta = f"{page.keyword},{page.industry}简历模板,{page.style},简历模板下载,Word简历模板,免费简历模板"
 
-    reviews = "\n".join([f'<div class="review-card">{item}</div>' for item in (REVIEW_ITEMS + REVIEW_ITEMS)])
-    faqs = "\n".join(
-        [f'<div class="faq-item"><h3>{escape(q)}</h3><p>{escape(a)}</p></div>' for q, a in FAQ_ITEMS]
+    faq_html = "\n".join(
+        f'<div class="faq-item"><h3>{escape(q)}</h3><p>{escape(a)}</p></div>' for q, a in build_faq(page)
     )
-    related = render_related_cards(pages, page.idx - 1)
+    reviews_html = "\n".join(f'<div class="review-card">{r}</div>' for r in build_reviews(page))
+    related_html = render_related_cards(pages, page.idx - 1)
+    seo_p1, seo_p2 = seo_paragraphs(page)
 
     return f"""<!DOCTYPE html>
 <html lang="zh">
@@ -156,9 +189,9 @@ body{{font-family:Inter,Arial;background:#f7f9fc;color:#333;}}
 .card img{{width:100%;}}
 .card-title{{padding:16px;font-weight:600;text-align:center;}}
 .review-scroll{{overflow:hidden;width:100%;}}
-.review-track{{display:flex;gap:20px;width:max-content;animation:scrollReviews 40s linear infinite;}}
-.review-card{{min-width:280px;background:#fff;padding:20px;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,.08);line-height:1.6;}}
-@keyframes scrollReviews{{0%{{transform:translateX(0);}}100%{{transform:translateX(-50%);}}}}
+.review-track{{display:flex;gap:20px;width:max-content;animation:scrollReviews 45s linear infinite;}}
+.review-card{{min-width:300px;background:#fff;padding:20px;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,.08);line-height:1.6;}}
+@keyframes scrollReviews{{0%{{transform:translateX(0);}}100%{{transform:translateX(-45%);}}}}
 .faq{{max-width:900px;margin:auto;}}
 .faq-item{{background:#fff;padding:20px;border-radius:12px;margin-bottom:15px;box-shadow:0 8px 20px rgba(0,0,0,.05);}}
 .cta{{background:linear-gradient(135deg,#4f46e5,#2563eb);color:#fff;padding:80px 0;text-align:center;}}
@@ -171,13 +204,13 @@ body{{font-family:Inter,Arial;background:#f7f9fc;color:#333;}}
 </head>
 <body>
 <header class="header"><div class="container header-inner"><div class="logo">简历模板库</div><input class="search" placeholder="搜索简历模板，例如：程序员简历模板"></div></header>
-<section class="hero"><div class="container hero-inner"><div><h1>{escape(page.keyword)}</h1><p>1000+模板覆盖应届生 / 程序员 / 产品经理 / 护士等岗位，支持 Word 编辑与 PDF 导出，一键生成专业简历。</p><div class="download"><div class="qrcode"><img src="images/qrcode.png" alt="简历模板APP下载二维码"></div><div><p>扫码下载APP</p><p>免费获取全部模板</p></div></div></div><img src="images/preview.png" width="420" alt="简历模板APP界面预览"></div></section>
-<section class="section"><div class="container"><h2 class="section-title">热门简历模板</h2><div class="templates">{related}</div></div></section>
-<section class="section"><div class="container"><h2 class="section-title">用户真实评价</h2><div class="review-scroll"><div class="review-track">{reviews}</div></div></div></section>
-<section class="section"><div class="container"><h2 class="section-title">常见问题</h2><div class="faq">{faqs}</div></div></section>
-<section class="cta"><div class="container"><h2>立即下载简历模板APP</h2><p>1000+专业简历模板免费使用</p><img src="images/qrcode.png" alt="APP下载二维码"></div></section>
-<section class="section"><div class="container"><h2 class="section-title">热门简历模板下载</h2><p style="max-width:900px;margin:auto;line-height:1.9;text-align:center;color:#555">本站提供超过1000套专业简历模板免费下载，包括应届生简历模板、程序员简历模板、产品经理简历模板、销售简历模板、教师简历模板、护士简历模板、设计师简历模板等热门岗位模板。所有简历模板均支持Word编辑与PDF导出，适用于校园招聘、社会招聘、互联网求职、金融行业求职等多种场景。你当前浏览的是“{escape(page.keyword)}”专题页，可直接下载或继续浏览相关推荐模板。</p></div></section>
-<footer class="footer"><div class="container"><p>© 2026 简历模板库 Resume Template Hub 提供应届生简历模板、程序员简历模板、产品经理简历模板、销售简历模板、Word简历模板等免费下载资源。</p></div></footer>
+<section class="hero"><div class="container hero-inner"><div><h1>{escape(page.keyword)}</h1><p>针对{escape(page.industry)}岗位优化的{escape(page.style)}专题页面，支持 Word 编辑 / PDF 导出，帮助你更快产出可投递简历。</p><div class="download"><div class="qrcode"><img src="images/qrcode.png" alt="简历模板APP下载二维码"></div><div><p>扫码下载APP</p><p>免费获取全部模板</p></div></div></div><img src="images/preview.png" width="420" alt="简历模板APP界面预览"></div></section>
+<section class="section"><div class="container"><h2 class="section-title">热门简历模板</h2><div class="templates">{related_html}</div></div></section>
+<section class="section"><div class="container"><h2 class="section-title">用户真实评价</h2><div class="review-scroll"><div class="review-track">{reviews_html}</div></div></div></section>
+<section class="section"><div class="container"><h2 class="section-title">常见问题</h2><div class="faq">{faq_html}</div></div></section>
+<section class="cta"><div class="container"><h2>立即下载简历模板APP</h2><p>{escape(page.keyword)} 一键套用，快速修改</p><img src="images/qrcode.png" alt="APP下载二维码"></div></section>
+<section class="section"><div class="container"><h2 class="section-title">热门简历模板下载</h2><p style="max-width:900px;margin:auto;line-height:1.9;text-align:center;color:#555">{escape(seo_p1)}<br><br>{escape(seo_p2)}</p></div></section>
+<footer class="footer"><div class="container"><p>© 2026 简历模板库 Resume Template Hub 提供{escape(page.industry)}岗位与多行业求职模板下载服务。</p></div></footer>
 </body>
 </html>
 """
@@ -210,15 +243,14 @@ def write_index(pages: list[PageData], output_dir: Path, base_url: str) -> None:
 def write_keywords_csv(pages: list[PageData], output_dir: Path) -> None:
     with (output_dir / "keywords.csv").open("w", encoding="utf-8", newline="") as file:
         writer = csv.writer(file)
-        writer.writerow(["id", "keyword", "slug"])
+        writer.writerow(["id", "keyword", "slug", "industry", "base", "style"])
         for p in pages:
-            writer.writerow([p.idx, p.keyword, p.slug])
+            writer.writerow([p.idx, p.keyword, p.slug, p.industry, p.base, p.style])
 
 
 def write_sitemap(pages: list[PageData], output_dir: Path, base_url: str) -> None:
     urlset = Element("urlset", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
     today = date.today().isoformat()
-
     for p in pages:
         url = SubElement(urlset, "url")
         SubElement(url, "loc").text = f"{base_url.rstrip('/')}/{p.slug}.html"
@@ -231,7 +263,6 @@ def write_sitemap(pages: list[PageData], output_dir: Path, base_url: str) -> Non
     SubElement(index_url, "lastmod").text = today
     SubElement(index_url, "changefreq").text = "daily"
     SubElement(index_url, "priority").text = "1.0"
-
     ElementTree(urlset).write(output_dir / "sitemap.xml", encoding="utf-8", xml_declaration=True)
 
 
@@ -242,12 +273,12 @@ def generate(output_dir: Path, base_url: str, total: int) -> None:
             old_file.unlink()
 
     pages: list[PageData] = []
-    for idx, keyword in enumerate(build_keywords(total), start=1):
-        pages.append(PageData(idx=idx, keyword=keyword, slug=slugify(f"{idx}-{keyword}")))
+    for idx, (industry, base, style) in enumerate(build_keywords(total), start=1):
+        keyword = f"{industry}{base}{style}"
+        pages.append(PageData(idx, keyword, slugify(f"{idx}-{keyword}"), industry, base, style))
 
     for page in pages:
-        html = render_page(page, pages, base_url)
-        (output_dir / f"{page.slug}.html").write_text(html, encoding="utf-8")
+        (output_dir / f"{page.slug}.html").write_text(render_page(page, pages, base_url), encoding="utf-8")
 
     write_index(pages, output_dir, base_url)
     write_keywords_csv(pages, output_dir)
@@ -260,7 +291,6 @@ def main() -> None:
     parser.add_argument("--base-url", default="https://example.com", help="站点基础 URL")
     parser.add_argument("--total", type=int, default=200, help="生成页面数量，默认 200")
     args = parser.parse_args()
-
     generate(Path(args.output), args.base_url, args.total)
 
 
