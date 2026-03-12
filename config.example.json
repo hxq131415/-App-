@@ -1,0 +1,35 @@
+{
+  "site_name": "Enterprise SEO Factory",
+  "base_url": "https://seo.example.com",
+  "output_dir": "dist",
+  "language": "zh-CN",
+  "max_pages": 1000000,
+  "internal_links_per_page": 10,
+  "sitemap_max_urls": 50000,
+  "keyword_dimensions": [
+    ["企业", "跨境", "本地", "品牌"],
+    ["SEO", "AEO", "内容营销", "自动化"],
+    ["服务", "方案", "平台", "工具"],
+    ["价格", "案例", "实施", "指南"]
+  ],
+  "ai": {
+    "provider": "openai",
+    "enabled": false,
+    "api_key": "",
+    "endpoint": "https://api.openai.com/v1/chat/completions",
+    "model": "gpt-4o-mini",
+    "temperature": 0.6,
+    "timeout_seconds": 30,
+    "max_tokens": 700,
+    "sleep_seconds": 0
+  },
+  "submit": {
+    "enabled": false,
+    "submit_google": true,
+    "submit_bing": true,
+    "indexnow_enabled": false,
+    "indexnow_host": "seo.example.com",
+    "indexnow_key": "",
+    "indexnow_key_location": "https://seo.example.com/indexnow-key.txt"
+  }
+}
