@@ -18,9 +18,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import html
-import itertools
 import json
-import math
 import os
 import re
 import sys
@@ -29,7 +27,7 @@ import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence, Tuple
 
 
 @dataclass
@@ -76,6 +74,13 @@ class SEOFactoryConfig:
     submit: SubmitConfig = field(default_factory=SubmitConfig)
 
 
+def safe_product(values: Sequence[int]) -> int:
+    result = 1
+    for value in values:
+        result *= value
+    return result
+
+
 class KeywordSpace:
     def __init__(self, dimensions: Sequence[Sequence[str]]):
         if not dimensions:
@@ -88,7 +93,7 @@ class KeywordSpace:
             normalized.append(cleaned)
         self.dimensions: List[List[str]] = normalized
         self.sizes = [len(d) for d in self.dimensions]
-        self.total = math.prod(self.sizes)
+        self.total = safe_product(self.sizes)
 
     def combo_by_index(self, idx: int) -> Tuple[str, ...]:
         if idx < 0 or idx >= self.total:
