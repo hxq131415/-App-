@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """SEO Factory: enterprise-style static SEO site generator.
-
 Features:
 - Massive page generation (1M+ pages)
 - AI content generation (OpenAI-compatible API)
@@ -8,13 +7,10 @@ Features:
 - Automatic sitemap splitting + sitemap index
 - Automatic search engine submission (sitemap ping + IndexNow)
 - Multi-keyword Cartesian combinations (10M+ pages)
-
 One-click run:
     python seo_factory.py
 """
-
 from __future__ import annotations
-
 import argparse
 import hashlib
 import html
@@ -28,8 +24,6 @@ import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Sequence, Tuple
-
-
 @dataclass
 class AIConfig:
     provider: str = "openai"
@@ -41,19 +35,19 @@ class AIConfig:
     timeout_seconds: int = 30
     max_tokens: int = 700
     sleep_seconds: float = 0.0
-
-
 @dataclass
 class SubmitConfig:
     enabled: bool = False
     submit_google: bool = True
     submit_bing: bool = True
+    baidu_enabled: bool = False
+    baidu_site: str = ""
+    baidu_token: str = ""
+    baidu_batch_size: int = 2000
     indexnow_enabled: bool = False
     indexnow_host: str = ""
     indexnow_key: str = ""
     indexnow_key_location: str = ""
-
-
 @dataclass
 class SEOFactoryConfig:
     site_name: str = "SEO Factory Demo"
@@ -73,15 +67,11 @@ class SEOFactoryConfig:
     )
     ai: AIConfig = field(default_factory=AIConfig)
     submit: SubmitConfig = field(default_factory=SubmitConfig)
-
-
 def safe_product(values: Sequence[int]) -> int:
     result = 1
     for value in values:
         result *= value
     return result
-
-
 class KeywordSpace:
     def __init__(self, dimensions: Sequence[Sequence[str]]):
         if not dimensions:
@@ -95,7 +85,6 @@ class KeywordSpace:
         self.dimensions: List[List[str]] = normalized
         self.sizes = [len(d) for d in self.dimensions]
         self.total = safe_product(self.sizes)
-
     def combo_by_index(self, idx: int) -> Tuple[str, ...]:
         if idx < 0 or idx >= self.total:
             raise IndexError(idx)
@@ -106,18 +95,14 @@ class KeywordSpace:
             pos = (idx // base) % size
             out.append(values[pos])
         return tuple(out)
-
-
 class AIWriter:
     def __init__(self, config: AIConfig):
         self.config = config
-
     def generate(self, combo: Sequence[str], title: str) -> str:
         if not self.config.enabled or not self.config.api_key:
             return self._fallback(combo, title)
         if self.config.provider != "openai":
             return self._fallback(combo, title)
-
         payload = {
             "model": self.config.model,
             "temperature": self.config.temperature,
@@ -155,7 +140,6 @@ class AIWriter:
         except Exception as e:
             print(f"[WARN] AI 生成失败，使用模板兜底: {e}")
             return self._fallback(combo, title)
-
     @staticmethod
     def _fallback(combo: Sequence[str], title: str) -> str:
         keywords = "、".join(combo)
@@ -172,8 +156,6 @@ class AIWriter:
 <p><strong>Q1:</strong> 多关键词页面会不会互相竞争？<br><strong>A:</strong> 通过 URL 结构、标题差异和内链策略可有效降低冲突。</p>
 <p><strong>Q2:</strong> 新站多久能看到自然流量？<br><strong>A:</strong> 一般 4-12 周开始出现趋势，取决于行业竞争与更新频率。</p>
 """.strip()
-
-
 class SitemapWriter:
     def __init__(self, out_dir: Path, base_url: str, max_urls: int):
         self.out_dir = out_dir
@@ -183,7 +165,6 @@ class SitemapWriter:
         self.url_count = 0
         self.current_file = None
         self.generated: List[str] = []
-
     def _open_new(self):
         if self.current_file:
             self.current_file.write("</urlset>\n")
@@ -195,14 +176,12 @@ class SitemapWriter:
         self.current_file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
         self.current_file.write('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n')
         self.url_count = 0
-
     def add(self, path: str):
         if not self.current_file or self.url_count >= self.max_urls:
             self._open_new()
         loc = f"{self.base_url}/{path.lstrip('/')}"
         self.current_file.write(f"  <url><loc>{html.escape(loc)}</loc></url>\n")
         self.url_count += 1
-
     def close(self):
         if self.current_file:
             self.current_file.write("</urlset>\n")
@@ -214,8 +193,6 @@ class SitemapWriter:
             for name in self.generated:
                 f.write(f"  <sitemap><loc>{html.escape(self.base_url + '/' + name)}</loc></sitemap>\n")
             f.write("</sitemapindex>\n")
-
-
 class SEOFactory:
     def __init__(self, cfg: SEOFactoryConfig):
         self.cfg = cfg
@@ -225,13 +202,11 @@ class SEOFactory:
         self.out_dir = Path(cfg.output_dir)
         self.pages_dir = self.out_dir / "pages"
         self.page_template = self.load_page_template()
-
     def load_page_template(self) -> str:
         p = Path(self.cfg.page_template_file)
         if p.exists():
             return p.read_text(encoding="utf-8")
         return self.default_page_template()
-
     @staticmethod
     def default_page_template() -> str:
         return """<!doctype html>
@@ -257,14 +232,12 @@ class SEOFactory:
 </body>
 </html>
 """
-
     @staticmethod
     def render_template(template: str, variables: dict) -> str:
         out = template
         for key, value in variables.items():
             out = out.replace("{{" + key + "}}", value)
         return out
-
     @staticmethod
     def slugify(text: str) -> str:
         s = text.lower().strip()
@@ -272,12 +245,10 @@ class SEOFactory:
         s = re.sub(r"[^\w\-\u4e00-\u9fff]", "", s)
         s = re.sub(r"-+", "-", s)
         return s.strip("-") or "item"
-
     def path_for_combo(self, combo: Sequence[str]) -> str:
         joined = "-".join(combo)
         digest = hashlib.md5(joined.encode("utf-8")).hexdigest()[:8]
         return f"pages/{self.slugify(joined)}-{digest}.html"
-
     def internal_link_indices(self, idx: int) -> List[int]:
         n = self.total_pages
         if n <= 1:
@@ -289,12 +260,10 @@ class SEOFactory:
         links.append(seed % n)
         links = [x for x in dict.fromkeys(links) if x != idx]
         return links[: self.cfg.internal_links_per_page]
-
     def render_page(self, idx: int, combo: Sequence[str]) -> str:
         title = " | ".join(combo) + " - 专题页"
         desc = f"围绕 {'、'.join(combo)} 的企业级解决方案、实施路径与常见问题。"
         content = self.ai_writer.generate(combo, title)
-
         link_html = []
         for target in self.internal_link_indices(idx):
             t_combo = self.space.combo_by_index(target)
@@ -302,7 +271,6 @@ class SEOFactory:
             t_title = " / ".join(t_combo)
             rel = os.path.relpath(self.out_dir / t_path, start=self.pages_dir)
             link_html.append(f'<li><a href="{html.escape(rel)}">{html.escape(t_title)}</a></li>')
-
         canonical_url = self.cfg.base_url.rstrip('/') + '/' + self.path_for_combo(combo)
         return self.render_template(
             self.page_template,
@@ -318,7 +286,6 @@ class SEOFactory:
                 "internal_links_html": "".join(link_html),
             },
         )
-
     def write_robots(self):
         txt = (
             "User-agent: *\n"
@@ -326,7 +293,6 @@ class SEOFactory:
             f"Sitemap: {self.cfg.base_url.rstrip('/')}/sitemap.xml\n"
         )
         (self.out_dir / "robots.txt").write_text(txt, encoding="utf-8")
-
     def submit_to_engines(self):
         if not self.cfg.submit.enabled:
             return
@@ -342,10 +308,40 @@ class SEOFactory:
                     print(f"[INFO] 提交成功: {url} ({resp.status})")
             except Exception as e:
                 print(f"[WARN] 提交失败: {url} -> {e}")
-
+        if self.cfg.submit.baidu_enabled:
+            self.submit_baidu()
         if self.cfg.submit.indexnow_enabled:
             self.submit_indexnow()
-
+    def submit_baidu(self):
+        c = self.cfg.submit
+        if not (c.baidu_site and c.baidu_token):
+            print("[WARN] 百度推送配置不完整，跳过")
+            return
+        if c.baidu_batch_size <= 0:
+            print("[WARN] baidu_batch_size 必须 > 0，跳过")
+            return
+        push_url = f"http://data.zz.baidu.com/urls?site={urllib.parse.quote(c.baidu_site)}&token={urllib.parse.quote(c.baidu_token)}"
+        all_urls = []
+        for idx in range(self.total_pages):
+            combo = self.space.combo_by_index(idx)
+            rel_path = self.path_for_combo(combo)
+            all_urls.append(f"{self.cfg.base_url.rstrip('/')}/{rel_path}")
+        total_batches = (len(all_urls) + c.baidu_batch_size - 1) // c.baidu_batch_size
+        for i in range(total_batches):
+            batch = all_urls[i * c.baidu_batch_size : (i + 1) * c.baidu_batch_size]
+            data = "\n".join(batch).encode("utf-8")
+            req = urllib.request.Request(
+                push_url,
+                data=data,
+                headers={"Content-Type": "text/plain"},
+                method="POST",
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=20) as resp:
+                    resp_body = resp.read().decode("utf-8", errors="ignore")
+                    print(f"[INFO] 百度推送成功: batch {i + 1}/{total_batches}, status={resp.status}, body={resp_body}")
+            except Exception as e:
+                print(f"[WARN] 百度推送失败: batch {i + 1}/{total_batches} -> {e}")
     def submit_indexnow(self):
         c = self.cfg.submit
         if not (c.indexnow_host and c.indexnow_key and c.indexnow_key_location):
@@ -368,14 +364,11 @@ class SEOFactory:
                 print(f"[INFO] IndexNow 提交成功: {resp.status}")
         except Exception as e:
             print(f"[WARN] IndexNow 提交失败: {e}")
-
     def run(self):
         self.out_dir.mkdir(parents=True, exist_ok=True)
         self.pages_dir.mkdir(parents=True, exist_ok=True)
-
         sitemap = SitemapWriter(self.out_dir, self.cfg.base_url, self.cfg.sitemap_max_urls)
         started = time.time()
-
         for idx in range(self.total_pages):
             combo = self.space.combo_by_index(idx)
             rel_path = self.path_for_combo(combo)
@@ -383,19 +376,15 @@ class SEOFactory:
             abs_path.parent.mkdir(parents=True, exist_ok=True)
             abs_path.write_text(self.render_page(idx, combo), encoding="utf-8")
             sitemap.add(rel_path)
-
             if (idx + 1) % 5000 == 0:
                 elapsed = time.time() - started
                 rate = (idx + 1) / max(elapsed, 1)
                 print(f"[INFO] 已生成 {idx + 1}/{self.total_pages} 页, {rate:.1f} pages/s")
-
         sitemap.close()
         self.write_robots()
         self.submit_to_engines()
         elapsed = time.time() - started
         print(f"[DONE] 完成，共 {self.total_pages} 页，耗时 {elapsed:.1f}s，输出目录: {self.out_dir}")
-
-
 def load_config(path: Optional[str]) -> SEOFactoryConfig:
     if not path:
         return SEOFactoryConfig()
@@ -404,8 +393,6 @@ def load_config(path: Optional[str]) -> SEOFactoryConfig:
     submit = SubmitConfig(**data.get("submit", {}))
     kwargs = {k: v for k, v in data.items() if k not in {"ai", "submit"}}
     return SEOFactoryConfig(ai=ai, submit=submit, **kwargs)
-
-
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Enterprise SEO static site factory")
     p.add_argument("--config", help="JSON配置文件路径")
@@ -413,8 +400,6 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     p.add_argument("--base-url", help="覆盖配置中的 base_url")
     p.add_argument("--output-dir", help="覆盖配置中的 output_dir")
     return p.parse_args(argv)
-
-
 def main(argv: Sequence[str]) -> int:
     args = parse_args(argv)
     cfg = load_config(args.config)
@@ -424,15 +409,11 @@ def main(argv: Sequence[str]) -> int:
         cfg.base_url = args.base_url
     if args.output_dir:
         cfg.output_dir = args.output_dir
-
     if cfg.sitemap_max_urls <= 0 or cfg.sitemap_max_urls > 50000:
         raise ValueError("sitemap_max_urls 必须在 1-50000")
     if cfg.max_pages <= 0:
         raise ValueError("max_pages 必须 > 0")
-
     SEOFactory(cfg).run()
     return 0
-
-
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv[1:]))

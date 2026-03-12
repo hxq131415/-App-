@@ -6,7 +6,7 @@
 - 自动 AI 写内容（OpenAI 兼容接口）
 - 自动内链
 - 自动 sitemap 拆分（单文件最多 50000 URL）
-- 自动提交搜索引擎（Google/Bing ping + IndexNow）
+- 自动提交搜索引擎（Google/Bing ping + 百度主动推送 + IndexNow）
 - 多关键词组合（笛卡尔积，可扩展至千万页面）
 - **支持按模板生成落地页 HTML**
 
@@ -47,6 +47,18 @@ python seo_factory.py --config config.example.json --max-pages 1000000 --base-ur
 - `{{internal_links_html}}`（自动内链 `<li>` 列表）
 
 你只需要改模板结构，不用改 Python 代码。
+
+
+## 百度自动推送
+
+已支持百度主动推送 API（普通收录）。在配置文件 `submit` 中设置：
+
+- `baidu_enabled = true`
+- `baidu_site = "你的站点域名"`（例如 `seo.example.com`，不带协议）
+- `baidu_token = "你的百度推送 token"`
+- `baidu_batch_size = 2000`（单次推送 URL 条数，默认 2000）
+
+脚本会在生成完成后按批次自动向百度提交全部生成 URL。
 
 ## 开启 AI 写作
 
