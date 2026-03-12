@@ -46,6 +46,9 @@ python seo_factory.py --config config.example.json --seed-file seeds.txt
 
 ## 落地页模板
 
+已内置高转化下载页结构：首屏卖点 + CTA按钮 + 扫码下载区 + 模板预览图。
+
+
 默认模板：`landing_page.template.html`，支持占位符：
 
 - `{{lang}}`
@@ -57,6 +60,13 @@ python seo_factory.py --config config.example.json --seed-file seeds.txt
 - `{{keywords}}`
 - `{{content_html}}`
 - `{{internal_links_html}}`
+- `{{app_name}}`
+- `{{app_tagline}}`
+- `{{app_download_url}}`
+- `{{qr_code_image_url}}`
+- `{{preview_image_1}}`
+- `{{preview_image_2}}`
+- `{{preview_image_3}}`
 
 ## 百度自动提交收录
 

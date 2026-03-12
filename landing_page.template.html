@@ -7,24 +7,93 @@
   <meta name="description" content="{{description}}" />
   <meta name="keywords" content="{{keywords}}" />
   <link rel="canonical" href="{{canonical_url}}" />
+  <style>
+    :root {
+      --bg:#0b1020; --card:#121a33; --text:#eef2ff; --muted:#9fb0d8; --brand:#6c8cff; --brand2:#43d3ff;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:radial-gradient(circle at 20% 0%,#1d2d63 0,#0b1020 40%),var(--bg);color:var(--text)}
+    .container{max-width:1140px;margin:0 auto;padding:32px 20px 70px}
+    .hero{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;align-items:stretch}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.12);border-radius:20px;backdrop-filter:blur(8px)}
+    .hero-left{padding:34px}
+    .badge{display:inline-block;padding:6px 12px;border-radius:999px;background:rgba(67,211,255,.12);color:#91e8ff;font-weight:600;font-size:12px}
+    h1{font-size:40px;line-height:1.15;margin:16px 0 14px}
+    .sub{color:var(--muted);font-size:16px;line-height:1.7}
+    .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+    .btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 18px;border-radius:12px;text-decoration:none;font-weight:700}
+    .btn-primary{background:linear-gradient(135deg,var(--brand),var(--brand2));color:white}
+    .btn-ghost{border:1px solid rgba(255,255,255,.28);color:white}
+
+    .hero-right{padding:20px;display:flex;gap:14px;align-items:center;justify-content:center}
+    .qr{width:160px;height:160px;border-radius:16px;background:#fff;padding:8px;object-fit:cover}
+    .qr-meta{max-width:230px}
+    .qr-meta h3{margin:0 0 8px;font-size:20px}
+    .qr-meta p{margin:0;color:var(--muted);font-size:14px;line-height:1.7}
+
+    .section{margin-top:24px}
+    .section-title{font-size:24px;margin:0 0 14px}
+
+    .preview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .preview{overflow:hidden;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:#0f1730}
+    .preview img{display:block;width:100%;height:220px;object-fit:cover}
+
+    .content{margin-top:18px;padding:28px}
+    .content :is(h2,h3){margin-top:0}
+    .content p,.content li{color:#dce5ff;line-height:1.8}
+
+    .links{margin-top:18px;padding:24px}
+    .links ul{margin:0;padding-left:20px;display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+    .links a{color:#9ddfff;text-decoration:none}
+
+    @media (max-width:960px){
+      .hero{grid-template-columns:1fr}
+      .preview-grid{grid-template-columns:1fr}
+      h1{font-size:32px}
+      .links ul{grid-template-columns:1fr}
+    }
+  </style>
 </head>
 <body>
-  <main>
-    <header>
-      <p>{{site_name}}</p>
-      <h1>{{headline}}</h1>
-    </header>
+  <main class="container">
+    <section class="hero">
+      <div class="hero-left card">
+        <span class="badge">高转化下载落地页模板</span>
+        <h1>{{app_name}}</h1>
+        <p class="sub">{{app_tagline}}</p>
+        <p class="sub">{{description}}</p>
+        <div class="cta">
+          <a class="btn btn-primary" href="{{app_download_url}}" target="_blank" rel="noopener">立即下载 App</a>
+          <a class="btn btn-ghost" href="#preview">先看模板预览</a>
+        </div>
+      </div>
+      <div class="hero-right card">
+        <img class="qr" src="{{qr_code_image_url}}" alt="扫码下载 {{app_name}}" />
+        <div class="qr-meta">
+          <h3>扫码立即下载</h3>
+          <p>手机扫码 10 秒安装，海量简历模板随时编辑与导出，支持应届生 / 社招 / 转行场景。</p>
+        </div>
+      </div>
+    </section>
 
-    <article>
+    <section id="preview" class="section">
+      <h2 class="section-title">模板预览图</h2>
+      <div class="preview-grid">
+        <div class="preview"><img src="{{preview_image_1}}" alt="简历模板预览1" /></div>
+        <div class="preview"><img src="{{preview_image_2}}" alt="简历模板预览2" /></div>
+        <div class="preview"><img src="{{preview_image_3}}" alt="简历模板预览3" /></div>
+      </div>
+    </section>
+
+    <section class="content card">
+      <h2>{{headline}}</h2>
       {{content_html}}
-    </article>
+    </section>
 
-    <aside>
-      <h2>相关页面</h2>
-      <ul>
-        {{internal_links_html}}
-      </ul>
-    </aside>
+    <section class="links card">
+      <h2 class="section-title">相关推荐</h2>
+      <ul>{{internal_links_html}}</ul>
+    </section>
   </main>
 </body>
 </html>

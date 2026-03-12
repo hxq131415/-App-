@@ -1,5 +1,14 @@
 {
   "site_name": "Resume Template App",
+  "app_name": "OfferGo 简历助手",
+  "app_tagline": "3分钟生成专业简历，HR 更愿意约面试",
+  "app_download_url": "https://resume.example.com/download",
+  "qr_code_image_url": "https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=https://resume.example.com/download",
+  "preview_image_urls": [
+    "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1000&q=80",
+    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1000&q=80",
+    "https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=1000&q=80"
+  ],
   "base_url": "https://resume.example.com",
   "output_dir": "dist",
   "language": "zh-CN",

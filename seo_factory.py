@@ -74,6 +74,17 @@ class KeywordHarvestConfig:
 class SEOFactoryConfig:
     site_name: str = "SEO Factory Demo"
     base_url: str = "https://example.com"
+    app_name: str = "简历模板App"
+    app_tagline: str = "3分钟生成专业简历，扫码立即下载"
+    app_download_url: str = "https://example.com/download"
+    qr_code_image_url: str = "https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=https://example.com/download"
+    preview_image_urls: List[str] = field(
+        default_factory=lambda: [
+            "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1000&q=80",
+            "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1000&q=80",
+            "https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=1000&q=80",
+        ]
+    )
     output_dir: str = "dist"
     language: str = "zh-CN"
     max_pages: int = 1000000
@@ -317,11 +328,22 @@ class SEOFactory:
             t_combo = self.space.combo_by_index((idx + step) % self.total_pages)
             rel = os.path.relpath(self.out_dir / self.path_for_combo(t_combo), start=self.pages_dir)
             link_html.append(f'<li><a href="{html.escape(rel)}">{html.escape(" / ".join(t_combo))}</a></li>')
+        previews = list(self.cfg.preview_image_urls[:3])
+        while len(previews) < 3:
+            previews.append("")
+
         return self.render_template(
             self.page_template,
             {
                 "lang": html.escape(self.cfg.language),
                 "site_name": html.escape(self.cfg.site_name),
+                "app_name": html.escape(self.cfg.app_name),
+                "app_tagline": html.escape(self.cfg.app_tagline),
+                "app_download_url": html.escape(self.cfg.app_download_url),
+                "qr_code_image_url": html.escape(self.cfg.qr_code_image_url),
+                "preview_image_1": html.escape(previews[0]),
+                "preview_image_2": html.escape(previews[1]),
+                "preview_image_3": html.escape(previews[2]),
                 "title": html.escape(title),
                 "headline": html.escape(title),
                 "description": html.escape(desc),
