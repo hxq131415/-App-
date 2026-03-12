@@ -1,0 +1,80 @@
+{
+  "site_name": "Resume Template App",
+  "app_name": "OfferGo 简历助手",
+  "app_tagline": "3分钟生成专业简历，HR 更愿意约面试",
+  "app_download_url": "https://resume.example.com/download",
+  "qr_code_image_url": "https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=https://resume.example.com/download",
+  "preview_image_urls": [
+    "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1000&q=80",
+    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1000&q=80",
+    "https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=1000&q=80"
+  ],
+  "base_url": "https://resume.example.com",
+  "output_dir": "dist",
+  "language": "zh-CN",
+  "max_pages": 50000,
+  "internal_links_per_page": 10,
+  "sitemap_max_urls": 50000,
+  "keyword_dimensions": [
+    [
+      "简历模板",
+      "个人简历",
+      "求职简历"
+    ],
+    [
+      "应届生",
+      "实习生",
+      "社招"
+    ],
+    [
+      "word",
+      "pdf",
+      "中英双语"
+    ]
+  ],
+  "keyword_harvest": {
+    "enabled": true,
+    "collect_only": false,
+    "output_file": "keywords.resume.txt",
+    "provider_baidu": true,
+    "provider_bing": true,
+    "max_suggestions_per_seed": 20,
+    "append_to_keyword_dimensions": true,
+    "seed_keywords": [
+      "简历模板",
+      "个人简历模板",
+      "应届生简历模板",
+      "求职简历模板",
+      "英文简历模板",
+      "word简历模板"
+    ],
+    "verify_ssl": false,
+    "seed_file_optional": true
+  },
+  "ai": {
+    "provider": "openai",
+    "enabled": false,
+    "api_key": "",
+    "endpoint": "https://api.openai.com/v1/chat/completions",
+    "model": "gpt-4o-mini",
+    "temperature": 0.6,
+    "timeout_seconds": 30,
+    "max_tokens": 700,
+    "sleep_seconds": 0
+  },
+  "submit": {
+    "enabled": false,
+    "submit_google": true,
+    "submit_bing": true,
+    "baidu_enabled": false,
+    "baidu_site": "resume.example.com",
+    "baidu_token": "",
+    "baidu_batch_size": 2000,
+    "indexnow_enabled": false,
+    "indexnow_host": "resume.example.com",
+    "indexnow_key": "",
+    "indexnow_key_location": "https://resume.example.com/indexnow-key.txt"
+  },
+  "page_template_file": "landing_page.template.html",
+  "expand_pages_when_needed": true
+}
