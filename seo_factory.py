@@ -88,6 +88,7 @@ class SEOFactoryConfig:
     output_dir: str = "dist"
     language: str = "zh-CN"
     max_pages: int = 1000000
+    expand_pages_when_needed: bool = True
     internal_links_per_page: int = 8
     sitemap_max_urls: int = 50000
     page_template_file: str = "landing_page.template.html"
@@ -299,7 +300,7 @@ class SEOFactory:
     def __init__(self, cfg: SEOFactoryConfig):
         self.cfg = cfg
         self.space = KeywordSpace(cfg.keyword_dimensions)
-        self.total_pages = min(cfg.max_pages, self.space.total)
+        self.total_pages = cfg.max_pages if cfg.expand_pages_when_needed else min(cfg.max_pages, self.space.total)
         self.ai_writer = AIWriter(cfg.ai)
         self.out_dir = Path(cfg.output_dir)
         self.pages_dir = self.out_dir / "pages"
@@ -324,18 +325,26 @@ class SEOFactory:
         s = re.sub(r"[^\w\-\u4e00-\u9fff]", "", s)
         return re.sub(r"-+", "-", s).strip("-") or "item"
 
-    def path_for_combo(self, combo: Sequence[str]) -> str:
+    def path_for_combo(self, combo: Sequence[str], page_idx: Optional[int] = None) -> str:
         joined = "-".join(combo)
-        return f"pages/{self.slugify(joined)}-{hashlib.md5(joined.encode('utf-8')).hexdigest()[:8]}.html"
+        variant = 0
+        if page_idx is not None and self.space.total > 0:
+            variant = page_idx // self.space.total
+        variant_suffix = f"-v{variant}" if variant > 0 else ""
+        key = f"{joined}{variant_suffix}"
+        return f"pages/{self.slugify(joined)}{variant_suffix}-{hashlib.md5(key.encode('utf-8')).hexdigest()[:8]}.html"
 
     def render_page(self, idx: int, combo: Sequence[str]) -> str:
-        title = " | ".join(combo) + " - 简历模板专题页"
+        variant = idx // self.space.total if self.space.total > 0 else 0
+        variant_label = f" 第{variant + 1}版" if variant > 0 else ""
+        title = " | ".join(combo) + f" - 简历模板专题页{variant_label}"
         desc = f"围绕 {'、'.join(combo)} 的简历模板下载、写作技巧与常见问题。"
         content = self.ai_writer.generate(combo, title)
         link_html = []
         for step in range(1, min(self.cfg.internal_links_per_page + 1, self.total_pages)):
-            t_combo = self.space.combo_by_index((idx + step) % self.total_pages)
-            rel = os.path.relpath(self.out_dir / self.path_for_combo(t_combo), start=self.pages_dir)
+            target_idx = (idx + step) % self.total_pages
+            t_combo = self.space.combo_by_index(target_idx % self.space.total)
+            rel = os.path.relpath(self.out_dir / self.path_for_combo(t_combo, target_idx), start=self.pages_dir)
             link_html.append(f'<li><a href="{html.escape(rel)}">{html.escape(" / ".join(t_combo))}</a></li>')
         previews = list(self.cfg.preview_image_urls[:3])
         while len(previews) < 3:
@@ -356,7 +365,7 @@ class SEOFactory:
                 "title": html.escape(title),
                 "headline": html.escape(title),
                 "description": html.escape(desc),
-                "canonical_url": html.escape(self.cfg.base_url.rstrip("/") + "/" + self.path_for_combo(combo)),
+                "canonical_url": html.escape(self.cfg.base_url.rstrip("/") + "/" + self.path_for_combo(combo, idx)),
                 "keywords": html.escape("、".join(combo)),
                 "content_html": content,
                 "internal_links_html": "".join(link_html),
@@ -390,8 +399,8 @@ class SEOFactory:
         self.pages_dir.mkdir(parents=True, exist_ok=True)
         sitemap = SitemapWriter(self.out_dir, self.cfg.base_url, self.cfg.sitemap_max_urls)
         for idx in range(self.total_pages):
-            combo = self.space.combo_by_index(idx)
-            rel = self.path_for_combo(combo)
+            combo = self.space.combo_by_index(idx % self.space.total)
+            rel = self.path_for_combo(combo, idx)
             abs_path = self.out_dir / rel
             abs_path.parent.mkdir(parents=True, exist_ok=True)
             abs_path.write_text(self.render_page(idx, combo), encoding="utf-8")

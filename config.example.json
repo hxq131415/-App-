@@ -12,7 +12,7 @@
   "base_url": "https://resume.example.com",
   "output_dir": "dist",
   "language": "zh-CN",
-  "max_pages": 1000000,
+  "max_pages": 50000,
   "internal_links_per_page": 10,
   "sitemap_max_urls": 50000,
   "keyword_dimensions": [
@@ -75,5 +75,6 @@
     "indexnow_key": "",
     "indexnow_key_location": "https://resume.example.com/indexnow-key.txt"
   },
-  "page_template_file": "landing_page.template.html"
+  "page_template_file": "landing_page.template.html",
+  "expand_pages_when_needed": true
 }

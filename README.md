@@ -68,6 +68,15 @@ python seo_factory.py --config config.example.json --seed-file seeds.txt
 - `{{preview_image_2}}`
 - `{{preview_image_3}}`
 
+
+## 生成 5w 页面
+
+如果关键词组合总量不足，开启 `expand_pages_when_needed=true` 后会自动生成变体页（URL 唯一），直到达到 `max_pages`。
+
+```bash
+python seo_factory.py --config config.example.json --max-pages 50000 --output-dir dist_5w
+```
+
 ## 百度自动提交收录
 
 在 `submit` 中配置：
