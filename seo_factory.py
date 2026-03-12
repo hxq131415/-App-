@@ -63,6 +63,7 @@ class SEOFactoryConfig:
     max_pages: int = 1000000
     internal_links_per_page: int = 8
     sitemap_max_urls: int = 50000
+    page_template_file: str = "landing_page.template.html"
     keyword_dimensions: List[List[str]] = field(
         default_factory=lambda: [
             ["企业", "跨境", "本地"],
@@ -223,6 +224,46 @@ class SEOFactory:
         self.ai_writer = AIWriter(cfg.ai)
         self.out_dir = Path(cfg.output_dir)
         self.pages_dir = self.out_dir / "pages"
+        self.page_template = self.load_page_template()
+
+    def load_page_template(self) -> str:
+        p = Path(self.cfg.page_template_file)
+        if p.exists():
+            return p.read_text(encoding="utf-8")
+        return self.default_page_template()
+
+    @staticmethod
+    def default_page_template() -> str:
+        return """<!doctype html>
+<html lang=\"{{lang}}\">
+<head>
+  <meta charset=\"utf-8\" />
+  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" />
+  <title>{{title}}</title>
+  <meta name=\"description\" content=\"{{description}}\" />
+  <link rel=\"canonical\" href=\"{{canonical_url}}\" />
+</head>
+<body>
+  <main>
+    <h1>{{headline}}</h1>
+    {{content_html}}
+    <section>
+      <h2>相关推荐</h2>
+      <ul>
+        {{internal_links_html}}
+      </ul>
+    </section>
+  </main>
+</body>
+</html>
+"""
+
+    @staticmethod
+    def render_template(template: str, variables: dict) -> str:
+        out = template
+        for key, value in variables.items():
+            out = out.replace("{{" + key + "}}", value)
+        return out
 
     @staticmethod
     def slugify(text: str) -> str:
@@ -262,29 +303,21 @@ class SEOFactory:
             rel = os.path.relpath(self.out_dir / t_path, start=self.pages_dir)
             link_html.append(f'<li><a href="{html.escape(rel)}">{html.escape(t_title)}</a></li>')
 
-        return f"""<!doctype html>
-<html lang=\"{html.escape(self.cfg.language)}\">
-<head>
-  <meta charset=\"utf-8\" />
-  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" />
-  <title>{html.escape(title)}</title>
-  <meta name=\"description\" content=\"{html.escape(desc)}\" />
-  <link rel=\"canonical\" href=\"{html.escape(self.cfg.base_url.rstrip('/') + '/' + self.path_for_combo(combo))}\" />
-</head>
-<body>
-  <main>
-    <h1>{html.escape(title)}</h1>
-    {content}
-    <section>
-      <h2>相关推荐</h2>
-      <ul>
-        {''.join(link_html)}
-      </ul>
-    </section>
-  </main>
-</body>
-</html>
-"""
+        canonical_url = self.cfg.base_url.rstrip('/') + '/' + self.path_for_combo(combo)
+        return self.render_template(
+            self.page_template,
+            {
+                "lang": html.escape(self.cfg.language),
+                "site_name": html.escape(self.cfg.site_name),
+                "title": html.escape(title),
+                "headline": html.escape(title),
+                "description": html.escape(desc),
+                "canonical_url": html.escape(canonical_url),
+                "keywords": html.escape("、".join(combo)),
+                "content_html": content,
+                "internal_links_html": "".join(link_html),
+            },
+        )
 
     def write_robots(self):
         txt = (

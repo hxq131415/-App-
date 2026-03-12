@@ -7,10 +7,30 @@
   "internal_links_per_page": 10,
   "sitemap_max_urls": 50000,
   "keyword_dimensions": [
-    ["企业", "跨境", "本地", "品牌"],
-    ["SEO", "AEO", "内容营销", "自动化"],
-    ["服务", "方案", "平台", "工具"],
-    ["价格", "案例", "实施", "指南"]
+    [
+      "企业",
+      "跨境",
+      "本地",
+      "品牌"
+    ],
+    [
+      "SEO",
+      "AEO",
+      "内容营销",
+      "自动化"
+    ],
+    [
+      "服务",
+      "方案",
+      "平台",
+      "工具"
+    ],
+    [
+      "价格",
+      "案例",
+      "实施",
+      "指南"
+    ]
   ],
   "ai": {
     "provider": "openai",
@@ -31,5 +51,6 @@
     "indexnow_host": "seo.example.com",
     "indexnow_key": "",
     "indexnow_key_location": "https://seo.example.com/indexnow-key.txt"
-  }
+  },
+  "page_template_file": "landing_page.template.html"
 }

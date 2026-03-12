@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{{title}}</title>
+  <meta name="description" content="{{description}}" />
+  <meta name="keywords" content="{{keywords}}" />
+  <link rel="canonical" href="{{canonical_url}}" />
+</head>
+<body>
+  <main>
+    <header>
+      <p>{{site_name}}</p>
+      <h1>{{headline}}</h1>
+    </header>
+
+    <article>
+      {{content_html}}
+    </article>
+
+    <aside>
+      <h2>相关页面</h2>
+      <ul>
+        {{internal_links_html}}
+      </ul>
+    </aside>
+  </main>
+</body>
+</html>

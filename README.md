@@ -8,6 +8,7 @@
 - 自动 sitemap 拆分（单文件最多 50000 URL）
 - 自动提交搜索引擎（Google/Bing ping + IndexNow）
 - 多关键词组合（笛卡尔积，可扩展至千万页面）
+- **支持按模板生成落地页 HTML**
 
 ## 一键运行
 
@@ -28,6 +29,24 @@ python seo_factory.py --config config.example.json
 ```bash
 python seo_factory.py --config config.example.json --max-pages 1000000 --base-url https://seo.example.com
 ```
+
+## 落地页模板用法
+
+默认模板文件是：`landing_page.template.html`，可在配置里改 `page_template_file`。
+
+模板可用占位符：
+
+- `{{lang}}`
+- `{{site_name}}`
+- `{{title}}`
+- `{{headline}}`
+- `{{description}}`
+- `{{canonical_url}}`
+- `{{keywords}}`
+- `{{content_html}}`（AI/模板正文 HTML）
+- `{{internal_links_html}}`（自动内链 `<li>` 列表）
+
+你只需要改模板结构，不用改 Python 代码。
 
 ## 开启 AI 写作
 
