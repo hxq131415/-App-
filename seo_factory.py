@@ -124,6 +124,15 @@ class KeywordHarvester:
         context = ssl._create_unverified_context()
         return urllib.request.urlopen(url, timeout=timeout, context=context)
 
+    @staticmethod
+    def decode_response_bytes(body: bytes, default: str = "utf-8") -> str:
+        for enc in (default, "utf-8", "gbk", "gb18030"):
+            try:
+                return body.decode(enc)
+            except Exception:
+                continue
+        return body.decode("utf-8", errors="ignore")
+
     def collect(self, extra_seeds: Optional[List[str]] = None) -> List[str]:
         seeds = list(dict.fromkeys([s.strip() for s in (self.cfg.seed_keywords + (extra_seeds or [])) if s.strip()]))
         keywords = set(seeds)
@@ -143,7 +152,7 @@ class KeywordHarvester:
         url = f"https://suggestion.baidu.com/su?wd={urllib.parse.quote(query)}&cb=cb"
         try:
             with self._urlopen(url, timeout=15) as resp:
-                raw = resp.read().decode("utf-8", errors="ignore")
+                raw = self.decode_response_bytes(resp.read(), default="gbk")
             m = re.search(r"\[(.*?)\]", raw)
             if not m:
                 return []
@@ -157,7 +166,7 @@ class KeywordHarvester:
         url = f"https://api.bing.com/osjson.aspx?query={urllib.parse.quote(query)}"
         try:
             with self._urlopen(url, timeout=15) as resp:
-                raw = resp.read().decode("utf-8", errors="ignore")
+                raw = self.decode_response_bytes(resp.read(), default="utf-8")
             data = json.loads(raw)
             if len(data) < 2 or not isinstance(data[1], list):
                 return []
@@ -424,7 +433,18 @@ def load_seed_file(path: Optional[str], optional: bool = True) -> List[str]:
             return []
         print(f"[WARN] seed 文件不存在: {path}")
         return []
-    return [x.strip() for x in p.read_text(encoding="utf-8").splitlines() if x.strip()]
+
+    raw = p.read_bytes()
+    text = ""
+    for enc in ("utf-8-sig", "utf-8", "gbk", "gb18030"):
+        try:
+            text = raw.decode(enc)
+            break
+        except Exception:
+            continue
+    if not text:
+        text = raw.decode("utf-8", errors="ignore")
+    return [x.strip() for x in text.splitlines() if x.strip()]
 
 
 def main(argv: Sequence[str]) -> int:
