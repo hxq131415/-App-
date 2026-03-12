@@ -1,37 +1,33 @@
 {
-  "site_name": "Enterprise SEO Factory",
-  "base_url": "https://seo.example.com",
+  "site_name": "Resume Template App",
+  "base_url": "https://resume.example.com",
   "output_dir": "dist",
   "language": "zh-CN",
   "max_pages": 1000000,
   "internal_links_per_page": 10,
   "sitemap_max_urls": 50000,
   "keyword_dimensions": [
-    [
-      "企业",
-      "跨境",
-      "本地",
-      "品牌"
-    ],
-    [
-      "SEO",
-      "AEO",
-      "内容营销",
-      "自动化"
-    ],
-    [
-      "服务",
-      "方案",
-      "平台",
-      "工具"
-    ],
-    [
-      "价格",
-      "案例",
-      "实施",
-      "指南"
-    ]
+    ["简历模板", "个人简历", "求职简历"],
+    ["应届生", "实习生", "社招"],
+    ["word", "pdf", "中英双语"]
   ],
+  "keyword_harvest": {
+    "enabled": true,
+    "collect_only": false,
+    "output_file": "keywords.resume.txt",
+    "provider_baidu": true,
+    "provider_bing": true,
+    "max_suggestions_per_seed": 20,
+    "append_to_keyword_dimensions": true,
+    "seed_keywords": [
+      "简历模板",
+      "个人简历模板",
+      "应届生简历模板",
+      "求职简历模板",
+      "英文简历模板",
+      "word简历模板"
+    ]
+  },
   "ai": {
     "provider": "openai",
     "enabled": false,
@@ -48,13 +44,13 @@
     "submit_google": true,
     "submit_bing": true,
     "baidu_enabled": false,
-    "baidu_site": "seo.example.com",
+    "baidu_site": "resume.example.com",
     "baidu_token": "",
     "baidu_batch_size": 2000,
     "indexnow_enabled": false,
-    "indexnow_host": "seo.example.com",
+    "indexnow_host": "resume.example.com",
     "indexnow_key": "",
-    "indexnow_key_location": "https://seo.example.com/indexnow-key.txt"
+    "indexnow_key_location": "https://resume.example.com/indexnow-key.txt"
   },
   "page_template_file": "landing_page.template.html"
 }
