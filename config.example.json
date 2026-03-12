@@ -7,9 +7,21 @@
   "internal_links_per_page": 10,
   "sitemap_max_urls": 50000,
   "keyword_dimensions": [
-    ["简历模板", "个人简历", "求职简历"],
-    ["应届生", "实习生", "社招"],
-    ["word", "pdf", "中英双语"]
+    [
+      "简历模板",
+      "个人简历",
+      "求职简历"
+    ],
+    [
+      "应届生",
+      "实习生",
+      "社招"
+    ],
+    [
+      "word",
+      "pdf",
+      "中英双语"
+    ]
   ],
   "keyword_harvest": {
     "enabled": true,
@@ -26,7 +38,9 @@
       "求职简历模板",
       "英文简历模板",
       "word简历模板"
-    ]
+    ],
+    "verify_ssl": false,
+    "seed_file_optional": true
   },
   "ai": {
     "provider": "openai",

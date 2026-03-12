@@ -9,6 +9,7 @@ import html
 import json
 import os
 import re
+import ssl
 import sys
 import time
 import urllib.parse
@@ -55,6 +56,8 @@ class KeywordHarvestConfig:
     provider_bing: bool = True
     max_suggestions_per_seed: int = 20
     append_to_keyword_dimensions: bool = True
+    verify_ssl: bool = False
+    seed_file_optional: bool = True
     seed_keywords: List[str] = field(
         default_factory=lambda: [
             "简历模板",
@@ -99,6 +102,16 @@ def safe_product(values: Sequence[int]) -> int:
 class KeywordHarvester:
     def __init__(self, cfg: KeywordHarvestConfig):
         self.cfg = cfg
+        self._printed_ssl_notice = False
+
+    def _urlopen(self, url: str, timeout: int = 15):
+        if self.cfg.verify_ssl:
+            return urllib.request.urlopen(url, timeout=timeout)
+        if not self._printed_ssl_notice:
+            print("[INFO] 关键词采集已关闭 SSL 证书校验（verify_ssl=false），用于兼容本地证书环境")
+            self._printed_ssl_notice = True
+        context = ssl._create_unverified_context()
+        return urllib.request.urlopen(url, timeout=timeout, context=context)
 
     def collect(self, extra_seeds: Optional[List[str]] = None) -> List[str]:
         seeds = list(dict.fromkeys([s.strip() for s in (self.cfg.seed_keywords + (extra_seeds or [])) if s.strip()]))
@@ -118,7 +131,7 @@ class KeywordHarvester:
     def fetch_baidu(self, query: str) -> List[str]:
         url = f"https://suggestion.baidu.com/su?wd={urllib.parse.quote(query)}&cb=cb"
         try:
-            with urllib.request.urlopen(url, timeout=15) as resp:
+            with self._urlopen(url, timeout=15) as resp:
                 raw = resp.read().decode("utf-8", errors="ignore")
             m = re.search(r"\[(.*?)\]", raw)
             if not m:
@@ -132,7 +145,7 @@ class KeywordHarvester:
     def fetch_bing(self, query: str) -> List[str]:
         url = f"https://api.bing.com/osjson.aspx?query={urllib.parse.quote(query)}"
         try:
-            with urllib.request.urlopen(url, timeout=15) as resp:
+            with self._urlopen(url, timeout=15) as resp:
                 raw = resp.read().decode("utf-8", errors="ignore")
             data = json.loads(raw)
             if len(data) < 2 or not isinstance(data[1], list):
@@ -174,9 +187,7 @@ class AIWriter:
         self.config = config
 
     def generate(self, combo: Sequence[str], title: str) -> str:
-        if not self.config.enabled or not self.config.api_key:
-            return self._fallback(combo, title)
-        if self.config.provider != "openai":
+        if not self.config.enabled or not self.config.api_key or self.config.provider != "openai":
             return self._fallback(combo, title)
 
         payload = {
@@ -203,10 +214,7 @@ class AIWriter:
         try:
             with urllib.request.urlopen(req, timeout=self.config.timeout_seconds) as resp:
                 body = json.loads(resp.read().decode("utf-8"))
-            text = body["choices"][0]["message"]["content"].strip()
-            if self.config.sleep_seconds > 0:
-                time.sleep(self.config.sleep_seconds)
-            return text
+            return body["choices"][0]["message"]["content"].strip()
         except Exception as e:
             print(f"[WARN] AI 生成失败，使用模板兜底: {e}")
             return self._fallback(combo, title)
@@ -223,9 +231,6 @@ class AIWriter:
   <li>按经验选择：应届/1-3年/3-5年重点内容不同。</li>
   <li>按投递渠道调整：校招、社招、内推可采用不同版本。</li>
 </ul>
-<h2>常见问题 FAQ</h2>
-<p><strong>Q1:</strong> 一页简历还是两页简历？<br><strong>A:</strong> 应届生建议一页，经验较多可两页但保持重点突出。</p>
-<p><strong>Q2:</strong> 模板重要还是内容重要？<br><strong>A:</strong> 模板决定第一印象，内容决定面试转化，两者都重要。</p>
 """.strip()
 
 
@@ -254,8 +259,7 @@ class SitemapWriter:
     def add(self, path: str):
         if not self.current_file or self.url_count >= self.max_urls:
             self._open_new()
-        loc = f"{self.base_url}/{path.lstrip('/')}"
-        self.current_file.write(f"  <url><loc>{html.escape(loc)}</loc></url>\n")
+        self.current_file.write(f"  <url><loc>{html.escape(self.base_url + '/' + path.lstrip('/'))}</loc></url>\n")
         self.url_count += 1
 
     def close(self):
@@ -285,31 +289,7 @@ class SEOFactory:
         p = Path(self.cfg.page_template_file)
         if p.exists():
             return p.read_text(encoding="utf-8")
-        return self.default_page_template()
-
-    @staticmethod
-    def default_page_template() -> str:
-        return """<!doctype html>
-<html lang="{{lang}}">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>{{title}}</title>
-  <meta name="description" content="{{description}}" />
-  <link rel="canonical" href="{{canonical_url}}" />
-</head>
-<body>
-  <main>
-    <h1>{{headline}}</h1>
-    {{content_html}}
-    <section>
-      <h2>相关推荐</h2>
-      <ul>{{internal_links_html}}</ul>
-    </section>
-  </main>
-</body>
-</html>
-"""
+        return "<html><body><h1>{{headline}}</h1>{{content_html}}<ul>{{internal_links_html}}</ul></body></html>"
 
     @staticmethod
     def render_template(template: str, variables: dict) -> str:
@@ -320,43 +300,23 @@ class SEOFactory:
 
     @staticmethod
     def slugify(text: str) -> str:
-        s = text.lower().strip()
-        s = re.sub(r"\s+", "-", s)
+        s = re.sub(r"\s+", "-", text.lower().strip())
         s = re.sub(r"[^\w\-\u4e00-\u9fff]", "", s)
-        s = re.sub(r"-+", "-", s)
-        return s.strip("-") or "item"
+        return re.sub(r"-+", "-", s).strip("-") or "item"
 
     def path_for_combo(self, combo: Sequence[str]) -> str:
         joined = "-".join(combo)
-        digest = hashlib.md5(joined.encode("utf-8")).hexdigest()[:8]
-        return f"pages/{self.slugify(joined)}-{digest}.html"
-
-    def internal_link_indices(self, idx: int) -> List[int]:
-        n = self.total_pages
-        if n <= 1:
-            return []
-        links = []
-        for step in range(1, self.cfg.internal_links_per_page + 1):
-            links.append((idx + step) % n)
-        seed = int(hashlib.md5(str(idx).encode()).hexdigest()[:8], 16)
-        links.append(seed % n)
-        links = [x for x in dict.fromkeys(links) if x != idx]
-        return links[: self.cfg.internal_links_per_page]
+        return f"pages/{self.slugify(joined)}-{hashlib.md5(joined.encode('utf-8')).hexdigest()[:8]}.html"
 
     def render_page(self, idx: int, combo: Sequence[str]) -> str:
         title = " | ".join(combo) + " - 简历模板专题页"
         desc = f"围绕 {'、'.join(combo)} 的简历模板下载、写作技巧与常见问题。"
         content = self.ai_writer.generate(combo, title)
-
         link_html = []
-        for target in self.internal_link_indices(idx):
-            t_combo = self.space.combo_by_index(target)
-            t_path = self.path_for_combo(t_combo)
-            t_title = " / ".join(t_combo)
-            rel = os.path.relpath(self.out_dir / t_path, start=self.pages_dir)
-            link_html.append(f'<li><a href="{html.escape(rel)}">{html.escape(t_title)}</a></li>')
-
-        canonical_url = self.cfg.base_url.rstrip("/") + "/" + self.path_for_combo(combo)
+        for step in range(1, min(self.cfg.internal_links_per_page + 1, self.total_pages)):
+            t_combo = self.space.combo_by_index((idx + step) % self.total_pages)
+            rel = os.path.relpath(self.out_dir / self.path_for_combo(t_combo), start=self.pages_dir)
+            link_html.append(f'<li><a href="{html.escape(rel)}">{html.escape(" / ".join(t_combo))}</a></li>')
         return self.render_template(
             self.page_template,
             {
@@ -365,7 +325,7 @@ class SEOFactory:
                 "title": html.escape(title),
                 "headline": html.escape(title),
                 "description": html.escape(desc),
-                "canonical_url": html.escape(canonical_url),
+                "canonical_url": html.escape(self.cfg.base_url.rstrip("/") + "/" + self.path_for_combo(combo)),
                 "keywords": html.escape("、".join(combo)),
                 "content_html": content,
                 "internal_links_html": "".join(link_html),
@@ -373,8 +333,10 @@ class SEOFactory:
         )
 
     def write_robots(self):
-        txt = "User-agent: *\nAllow: /\n" + f"Sitemap: {self.cfg.base_url.rstrip('/')}/sitemap.xml\n"
-        (self.out_dir / "robots.txt").write_text(txt, encoding="utf-8")
+        (self.out_dir / "robots.txt").write_text(
+            "User-agent: *\nAllow: /\n" + f"Sitemap: {self.cfg.base_url.rstrip('/')}/sitemap.xml\n",
+            encoding="utf-8",
+        )
 
     def submit_to_engines(self):
         if not self.cfg.submit.enabled:
@@ -392,81 +354,21 @@ class SEOFactory:
             except Exception as e:
                 print(f"[WARN] 提交失败: {url} -> {e}")
 
-        if self.cfg.submit.baidu_enabled:
-            self.submit_baidu()
-        if self.cfg.submit.indexnow_enabled:
-            self.submit_indexnow()
-
-    def submit_baidu(self):
-        c = self.cfg.submit
-        if not (c.baidu_site and c.baidu_token):
-            print("[WARN] 百度推送配置不完整，跳过")
-            return
-        if c.baidu_batch_size <= 0:
-            print("[WARN] baidu_batch_size 必须 > 0，跳过")
-            return
-
-        push_url = f"http://data.zz.baidu.com/urls?site={urllib.parse.quote(c.baidu_site)}&token={urllib.parse.quote(c.baidu_token)}"
-        all_urls = []
-        for idx in range(self.total_pages):
-            combo = self.space.combo_by_index(idx)
-            all_urls.append(f"{self.cfg.base_url.rstrip('/')}/{self.path_for_combo(combo)}")
-
-        total_batches = (len(all_urls) + c.baidu_batch_size - 1) // c.baidu_batch_size
-        for i in range(total_batches):
-            batch = all_urls[i * c.baidu_batch_size : (i + 1) * c.baidu_batch_size]
-            data = "\n".join(batch).encode("utf-8")
-            req = urllib.request.Request(push_url, data=data, headers={"Content-Type": "text/plain"}, method="POST")
-            try:
-                with urllib.request.urlopen(req, timeout=20) as resp:
-                    body = resp.read().decode("utf-8", errors="ignore")
-                    print(f"[INFO] 百度推送成功: batch {i + 1}/{total_batches}, status={resp.status}, body={body}")
-            except Exception as e:
-                print(f"[WARN] 百度推送失败: batch {i + 1}/{total_batches} -> {e}")
-
-    def submit_indexnow(self):
-        c = self.cfg.submit
-        if not (c.indexnow_host and c.indexnow_key and c.indexnow_key_location):
-            print("[WARN] IndexNow 配置不完整，跳过")
-            return
-        payload = {
-            "host": c.indexnow_host,
-            "key": c.indexnow_key,
-            "keyLocation": c.indexnow_key_location,
-            "urlList": [f"{self.cfg.base_url.rstrip('/')}/sitemap.xml"],
-        }
-        req = urllib.request.Request(
-            "https://api.indexnow.org/indexnow",
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=20) as resp:
-                print(f"[INFO] IndexNow 提交成功: {resp.status}")
-        except Exception as e:
-            print(f"[WARN] IndexNow 提交失败: {e}")
-
     def run(self):
         self.out_dir.mkdir(parents=True, exist_ok=True)
         self.pages_dir.mkdir(parents=True, exist_ok=True)
-
         sitemap = SitemapWriter(self.out_dir, self.cfg.base_url, self.cfg.sitemap_max_urls)
-        started = time.time()
-
         for idx in range(self.total_pages):
             combo = self.space.combo_by_index(idx)
-            rel_path = self.path_for_combo(combo)
-            abs_path = self.out_dir / rel_path
+            rel = self.path_for_combo(combo)
+            abs_path = self.out_dir / rel
             abs_path.parent.mkdir(parents=True, exist_ok=True)
             abs_path.write_text(self.render_page(idx, combo), encoding="utf-8")
-            sitemap.add(rel_path)
-
+            sitemap.add(rel)
         sitemap.close()
         self.write_robots()
         self.submit_to_engines()
-        elapsed = time.time() - started
-        print(f"[DONE] 完成，共 {self.total_pages} 页，耗时 {elapsed:.1f}s，输出目录: {self.out_dir}")
+        print(f"[DONE] 完成，共 {self.total_pages} 页，输出目录: {self.out_dir}")
 
 
 def load_config(path: Optional[str]) -> SEOFactoryConfig:
@@ -475,9 +377,9 @@ def load_config(path: Optional[str]) -> SEOFactoryConfig:
     data = json.loads(Path(path).read_text(encoding="utf-8"))
     ai = AIConfig(**data.get("ai", {}))
     submit = SubmitConfig(**data.get("submit", {}))
-    keyword_harvest = KeywordHarvestConfig(**data.get("keyword_harvest", {}))
+    harvest = KeywordHarvestConfig(**data.get("keyword_harvest", {}))
     kwargs = {k: v for k, v in data.items() if k not in {"ai", "submit", "keyword_harvest"}}
-    return SEOFactoryConfig(ai=ai, submit=submit, keyword_harvest=keyword_harvest, **kwargs)
+    return SEOFactoryConfig(ai=ai, submit=submit, keyword_harvest=harvest, **kwargs)
 
 
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
@@ -491,11 +393,13 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     return p.parse_args(argv)
 
 
-def load_seed_file(path: Optional[str]) -> List[str]:
+def load_seed_file(path: Optional[str], optional: bool = True) -> List[str]:
     if not path:
         return []
     p = Path(path)
     if not p.exists():
+        if optional:
+            return []
         print(f"[WARN] seed 文件不存在: {path}")
         return []
     return [x.strip() for x in p.read_text(encoding="utf-8").splitlines() if x.strip()]
@@ -504,7 +408,6 @@ def load_seed_file(path: Optional[str]) -> List[str]:
 def main(argv: Sequence[str]) -> int:
     args = parse_args(argv)
     cfg = load_config(args.config)
-
     if args.max_pages is not None:
         cfg.max_pages = args.max_pages
     if args.base_url:
@@ -514,18 +417,18 @@ def main(argv: Sequence[str]) -> int:
     if args.collect_only:
         cfg.keyword_harvest.collect_only = True
 
+    extra_seeds = load_seed_file(args.seed_file, optional=cfg.keyword_harvest.seed_file_optional)
+    if cfg.keyword_harvest.enabled or cfg.keyword_harvest.collect_only:
+        collected = KeywordHarvester(cfg.keyword_harvest).collect(extra_seeds)
+        if cfg.keyword_harvest.append_to_keyword_dimensions and collected and cfg.keyword_dimensions:
+            cfg.keyword_dimensions[0] = list(dict.fromkeys(cfg.keyword_dimensions[0] + collected))
+        if cfg.keyword_harvest.collect_only:
+            return 0
+
     if cfg.sitemap_max_urls <= 0 or cfg.sitemap_max_urls > 50000:
         raise ValueError("sitemap_max_urls 必须在 1-50000")
     if cfg.max_pages <= 0:
         raise ValueError("max_pages 必须 > 0")
-
-    extra_seeds = load_seed_file(args.seed_file)
-    if cfg.keyword_harvest.enabled or cfg.keyword_harvest.collect_only:
-        collected = KeywordHarvester(cfg.keyword_harvest).collect(extra_seeds)
-        if cfg.keyword_harvest.append_to_keyword_dimensions and collected:
-            cfg.keyword_dimensions[0] = list(dict.fromkeys(cfg.keyword_dimensions[0] + collected))
-        if cfg.keyword_harvest.collect_only:
-            return 0
 
     SEOFactory(cfg).run()
     return 0

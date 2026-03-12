@@ -34,6 +34,16 @@ python seo_factory.py --config config.example.json --collect-only
 python seo_factory.py --config config.example.json --seed-file seeds.txt
 ```
 
+### 证书与种子文件兼容项（修复你反馈的告警）
+
+在 `keyword_harvest` 中可配置：
+
+- `verify_ssl: false`：关闭联想词采集的 SSL 证书校验，避免本机缺少 CA 时报 `CERTIFICATE_VERIFY_FAILED`
+- `seed_file_optional: true`：`--seed-file` 文件不存在时静默跳过，不再报警
+
+如果你在线上环境证书完整，建议把 `verify_ssl` 改回 `true`。
+
+
 ## 落地页模板
 
 默认模板：`landing_page.template.html`，支持占位符：
