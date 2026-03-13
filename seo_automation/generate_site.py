@@ -322,6 +322,19 @@ def generate(
     write_urls_txt(pages, data_output_dir, base_url)
 
 
+def resolve_input_path(path_str: str) -> Path:
+    candidate = Path(path_str)
+    if candidate.exists():
+        return candidate
+
+    script_root = Path(__file__).resolve().parent
+    fallback = script_root.parent / path_str
+    if fallback.exists():
+        return fallback
+
+    raise SystemExit(f"文件不存在: {path_str}。请确认路径或使用绝对路径。")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="批量生成简历模板 SEO 页面")
     parser.add_argument("--pages-output", default="pages", help="HTML输出目录，默认 pages")
@@ -334,9 +347,13 @@ def main() -> None:
     parser.add_argument("--min-keyword-library", type=int, default=50000, help="关键词库最小规模要求")
     args = parser.parse_args()
 
-    config = json.loads(Path(args.config).read_text(encoding="utf-8"))
-    keyword_config = json.loads(Path(args.keyword_library_config).read_text(encoding="utf-8"))
-    template = Template(Path(args.template).read_text(encoding="utf-8"))
+    config_path = resolve_input_path(args.config)
+    keyword_library_path = resolve_input_path(args.keyword_library_config)
+    template_path = resolve_input_path(args.template)
+
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    keyword_config = json.loads(keyword_library_path.read_text(encoding="utf-8"))
+    template = Template(template_path.read_text(encoding="utf-8"))
 
     generate(
         pages_output_dir=Path(args.pages_output),
