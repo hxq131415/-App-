@@ -26,11 +26,15 @@ def slugify(text: str) -> str:
     cleaned = text.replace(" ", "-").replace("/", "-")
     safe_chars: list[str] = []
     for ch in cleaned:
-        if ch.isascii() and (ch.isalnum() or ch in "-_"):
-            safe_chars.append(ch.lower())
+        if ch.isalnum() or ch in "-_":
+            safe_chars.append(ch.lower() if ch.isascii() else ch)
         else:
-            safe_chars.append(f"u{ord(ch):x}")
-    return "resume-" + "".join(safe_chars)
+            safe_chars.append("-")
+
+    slug = "".join(safe_chars).strip("-_")
+    while "--" in slug:
+        slug = slug.replace("--", "-")
+    return slug
 
 
 def style_hint(style: str) -> str:
