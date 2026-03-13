@@ -4,6 +4,7 @@
 
 - **落地页模板单独文件**：`seo_automation/templates/landing_page.html`
 - **关键词与参数配置单独文件**：`seo_automation/config/resume_config.json`
+- **5w+ 关键词库配置文件**：`seo_automation/keyword_library.json`
 - **生成的 HTML 放在 `pages/` 目录**
 - **词库/站点数据放在 `dist/` 目录**（和 `pages/` 同级）
 
@@ -14,8 +15,11 @@ python3 seo_automation/generate_site.py \
   --pages-output pages \
   --data-output dist \
   --base-url https://example.com \
-  --total 200
+  --total 50000 \
+  --min-keyword-library 50000
 ```
+
+> 说明：脚本会先校验词库规模（默认至少 50,000），再按 `--total` 生成页面与数据。若基础组合不足，会自动从 `keyword_library.json` 补齐，因此支持生成 5w+ 页面。
 
 ## 输出结构
 
@@ -44,3 +48,8 @@ python3 seo_automation/generate_site.py \
 - `style_tags`
 - `cities`
 - `names`
+
+在 `seo_automation/keyword_library.json` 中维护 5w+ 通用词库组合参数：
+- `products` `modifiers` `intents`
+- `audiences` `scenarios` `platforms`
+- `regions` `question_prefixes` `years`

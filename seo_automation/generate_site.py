@@ -56,14 +56,89 @@ def seo_paragraphs(page: PageData) -> tuple[str, str]:
     return p1, p2
 
 
-def build_keywords(config: dict, total: int = 200) -> list[tuple[str, str, str]]:
-    combos: list[tuple[str, str, str]] = []
+def unique_keep_order(seq: list[str]) -> list[str]:
+    out: list[str] = []
+    seen = set()
+    for item in seq:
+        if item and item not in seen:
+            out.append(item)
+            seen.add(item)
+    return out
+
+
+def build_large_keyword_library(keyword_config: dict) -> list[str]:
+    products = unique_keep_order(keyword_config.get("products", []))
+    modifiers = unique_keep_order(keyword_config.get("modifiers", []))
+    intents = unique_keep_order(keyword_config.get("intents", []))
+    audiences = unique_keep_order(keyword_config.get("audiences", []))
+    scenarios = unique_keep_order(keyword_config.get("scenarios", []))
+    platforms = unique_keep_order(keyword_config.get("platforms", []))
+    regions = unique_keep_order(keyword_config.get("regions", []))
+    years = unique_keep_order(keyword_config.get("years", []))
+    question_prefixes = unique_keep_order(keyword_config.get("question_prefixes", []))
+
+    kws: list[str] = []
+    for p in products:
+        for m in modifiers:
+            for i in intents:
+                kws.append(f"{p}{m}{i}")
+
+    for a in audiences:
+        for p in products:
+            for i in intents:
+                kws.append(f"{a}{p}{i}")
+
+    for s in scenarios:
+        for p in products:
+            for pf in platforms:
+                kws.append(f"{s}{p}{pf}")
+
+    for r in regions:
+        for p in products:
+            for i in intents:
+                kws.append(f"{r}{p}{i}")
+
+    for y in years:
+        for p in products:
+            for i in intents:
+                for pf in platforms:
+                    kws.append(f"{y}{p}{i}{pf}")
+
+    for q in question_prefixes:
+        for p in products:
+            for i in intents[:10]:
+                kws.append(f"{q}选择{p}{i}")
+
+    return unique_keep_order(kws)
+
+
+def build_keywords(config: dict, keyword_library: list[str], total: int = 200) -> list[tuple[str, str, str, str]]:
+    combos: list[tuple[str, str, str, str]] = []
+    used_keywords: set[str] = set()
+
     for base in config["base_keywords"]:
         for industry in config["industries"]:
             for style in config["style_tags"]:
-                combos.append((industry, base, style))
+                keyword = f"{industry}{base}{style}"
+                if keyword in used_keywords:
+                    continue
+                combos.append((keyword, industry, base, style))
+                used_keywords.add(keyword)
                 if len(combos) >= total:
                     return combos
+
+    industries = config["industries"]
+    styles = config["style_tags"]
+    for idx, keyword in enumerate(keyword_library):
+        if keyword in used_keywords:
+            continue
+        industry = industries[idx % len(industries)]
+        style = styles[idx % len(styles)]
+        combos.append((keyword, industry, keyword, style))
+        used_keywords.add(keyword)
+        if len(combos) >= total:
+            return combos
+
     return combos[:total]
 
 
@@ -167,14 +242,12 @@ def write_keywords_csv(pages: list[PageData], data_output_dir: Path) -> None:
             writer.writerow([p.idx, p.keyword, p.slug, p.industry, p.base, p.style, f"/pages/{p.slug}.html"])
 
 
-def write_keyword_library(data_output_dir: Path, config: dict) -> None:
+def write_keyword_library(data_output_dir: Path, keyword_library: list[str]) -> None:
     with (data_output_dir / "keyword_library.csv").open("w", encoding="utf-8", newline="") as file:
         writer = csv.writer(file)
-        writer.writerow(["industry", "base", "style", "keyword"])
-        for base in config["base_keywords"]:
-            for industry in config["industries"]:
-                for style in config["style_tags"]:
-                    writer.writerow([industry, base, style, f"{industry}{base}{style}"])
+        writer.writerow(["keyword"])
+        for kw in keyword_library:
+            writer.writerow([kw])
 
 
 def write_sitemap(pages: list[PageData], data_output_dir: Path, base_url: str) -> None:
@@ -201,7 +274,16 @@ def write_urls_txt(pages: list[PageData], data_output_dir: Path, base_url: str) 
     (data_output_dir / "urls.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def generate(pages_output_dir: Path, data_output_dir: Path, base_url: str, total: int, config: dict, template: Template) -> None:
+def generate(
+    pages_output_dir: Path,
+    data_output_dir: Path,
+    base_url: str,
+    total: int,
+    config: dict,
+    keyword_config: dict,
+    template: Template,
+    min_keyword_library: int,
+) -> None:
     pages_output_dir.mkdir(parents=True, exist_ok=True)
     data_output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -213,9 +295,19 @@ def generate(pages_output_dir: Path, data_output_dir: Path, base_url: str, total
         if p.exists():
             p.unlink()
 
+    keyword_library = build_large_keyword_library(keyword_config)
+    if len(keyword_library) < min_keyword_library:
+        raise SystemExit(f"关键词库规模不足：{len(keyword_library)}，低于 --min-keyword-library={min_keyword_library}")
+
+    keyword_rows = build_keywords(config, keyword_library, total)
+    if len(keyword_rows) < total:
+        raise SystemExit(
+            f"可生成页面数量不足：{len(keyword_rows)}，低于 --total={total}。"
+            "请扩展 seo_automation/keyword_library.json 或降低 --total。"
+        )
+
     pages: list[PageData] = []
-    for idx, (industry, base, style) in enumerate(build_keywords(config, total), start=1):
-        keyword = f"{industry}{base}{style}"
+    for idx, (keyword, industry, base, style) in enumerate(keyword_rows, start=1):
         pages.append(PageData(idx, keyword, slugify(f"{idx}-{keyword}"), industry, base, style))
 
     for page in pages:
@@ -225,7 +317,7 @@ def generate(pages_output_dir: Path, data_output_dir: Path, base_url: str, total
 
     write_index(pages, pages_output_dir, base_url)
     write_keywords_csv(pages, data_output_dir)
-    write_keyword_library(data_output_dir, config)
+    write_keyword_library(data_output_dir, keyword_library)
     write_sitemap(pages, data_output_dir, base_url)
     write_urls_txt(pages, data_output_dir, base_url)
 
@@ -238,9 +330,12 @@ def main() -> None:
     parser.add_argument("--total", type=int, default=200, help="生成页面数量，默认 200")
     parser.add_argument("--config", default="seo_automation/config/resume_config.json", help="关键词与参数配置文件")
     parser.add_argument("--template", default="seo_automation/templates/landing_page.html", help="落地页HTML模板文件")
+    parser.add_argument("--keyword-library-config", default="seo_automation/keyword_library.json", help="5w+关键词库配置文件")
+    parser.add_argument("--min-keyword-library", type=int, default=50000, help="关键词库最小规模要求")
     args = parser.parse_args()
 
     config = json.loads(Path(args.config).read_text(encoding="utf-8"))
+    keyword_config = json.loads(Path(args.keyword_library_config).read_text(encoding="utf-8"))
     template = Template(Path(args.template).read_text(encoding="utf-8"))
 
     generate(
@@ -249,7 +344,9 @@ def main() -> None:
         base_url=args.base_url,
         total=args.total,
         config=config,
+        keyword_config=keyword_config,
         template=template,
+        min_keyword_library=args.min_keyword_library,
     )
 
 
