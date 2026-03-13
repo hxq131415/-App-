@@ -182,13 +182,13 @@ def render_related_cards(pages: list[PageData], current_index: int, count: int =
     )
 
 
-def render_page(page: PageData, pages: list[PageData], base_url: str, template: Template, config: dict) -> str:
+def render_page(page: PageData, pages: list[PageData], base_url: str, page_url_prefix: str, template: Template, config: dict) -> str:
     title = f"{page.keyword}免费下载 - {page.industry}高通过率简历模板"
     description = (
         f"{page.keyword}精选下载，面向{page.industry}岗位，提供{page.style}模板与可复用项目描述，"
         "支持Word编辑与PDF导出，快速生成专业简历。"
     )
-    canonical = f"{base_url.rstrip('/')}/pages/{page.slug}.html"
+    canonical = f"{base_url.rstrip('/')}/{page_url_prefix}/{page.slug}.html"
     keywords_meta = f"{page.keyword},{page.industry}简历模板,{page.style},简历模板下载,Word简历模板,免费简历模板"
 
     faq_html = "\n".join(
@@ -221,9 +221,9 @@ def render_page(page: PageData, pages: list[PageData], base_url: str, template: 
     )
 
 
-def write_index(pages: list[PageData], pages_output_dir: Path, base_url: str) -> None:
+def write_index(pages: list[PageData], pages_output_dir: Path, base_url: str, page_url_prefix: str) -> None:
     items = "\n".join(
-        f'<li><a href="./{p.slug}.html">{p.idx:03d}. {escape(p.keyword)}</a> <small>({base_url.rstrip("/")}/pages/{p.slug}.html)</small></li>'
+        f'<li><a href="./{p.slug}.html">{p.idx:03d}. {escape(p.keyword)}</a> <small>({base_url.rstrip("/")}/{page_url_prefix}/{p.slug}.html)</small></li>'
         for p in pages
     )
     html = f"""<!doctype html>
@@ -245,12 +245,12 @@ def write_index(pages: list[PageData], pages_output_dir: Path, base_url: str) ->
     (pages_output_dir / "index.html").write_text(html, encoding="utf-8")
 
 
-def write_keywords_csv(pages: list[PageData], data_output_dir: Path) -> None:
+def write_keywords_csv(pages: list[PageData], data_output_dir: Path, page_url_prefix: str) -> None:
     with (data_output_dir / "keywords.csv").open("w", encoding="utf-8", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(["id", "keyword", "slug", "industry", "base", "style", "url"])
         for p in pages:
-            writer.writerow([p.idx, p.keyword, p.slug, p.industry, p.base, p.style, f"/pages/{p.slug}.html"])
+            writer.writerow([p.idx, p.keyword, p.slug, p.industry, p.base, p.style, f"/{page_url_prefix}/{p.slug}.html"])
 
 
 def write_keyword_library(data_output_dir: Path, keyword_library: list[str]) -> None:
@@ -261,27 +261,27 @@ def write_keyword_library(data_output_dir: Path, keyword_library: list[str]) -> 
             writer.writerow([kw])
 
 
-def write_sitemap(pages: list[PageData], data_output_dir: Path, base_url: str) -> None:
+def write_sitemap(pages: list[PageData], data_output_dir: Path, base_url: str, page_url_prefix: str) -> None:
     urlset = Element("urlset", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
     today = date.today().isoformat()
     for p in pages:
         url = SubElement(urlset, "url")
-        SubElement(url, "loc").text = f"{base_url.rstrip('/')}/pages/{p.slug}.html"
+        SubElement(url, "loc").text = f"{base_url.rstrip('/')}/{page_url_prefix}/{p.slug}.html"
         SubElement(url, "lastmod").text = today
         SubElement(url, "changefreq").text = "weekly"
         SubElement(url, "priority").text = "0.8"
 
     index_url = SubElement(urlset, "url")
-    SubElement(index_url, "loc").text = f"{base_url.rstrip('/')}/pages/index.html"
+    SubElement(index_url, "loc").text = f"{base_url.rstrip('/')}/{page_url_prefix}/index.html"
     SubElement(index_url, "lastmod").text = today
     SubElement(index_url, "changefreq").text = "daily"
     SubElement(index_url, "priority").text = "1.0"
     ElementTree(urlset).write(data_output_dir / "sitemap.xml", encoding="utf-8", xml_declaration=True)
 
 
-def write_urls_txt(pages: list[PageData], data_output_dir: Path, base_url: str) -> None:
-    lines = [f"{base_url.rstrip('/')}/pages/{p.slug}.html" for p in pages]
-    lines.append(f"{base_url.rstrip('/')}/pages/index.html")
+def write_urls_txt(pages: list[PageData], data_output_dir: Path, base_url: str, page_url_prefix: str) -> None:
+    lines = [f"{base_url.rstrip('/')}/{page_url_prefix}/{p.slug}.html" for p in pages]
+    lines.append(f"{base_url.rstrip('/')}/{page_url_prefix}/index.html")
     (data_output_dir / "urls.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -294,6 +294,7 @@ def generate(
     keyword_config: dict,
     template: Template,
     min_keyword_library: int,
+    page_url_prefix: str,
 ) -> None:
     pages_output_dir.mkdir(parents=True, exist_ok=True)
     data_output_dir.mkdir(parents=True, exist_ok=True)
@@ -323,14 +324,22 @@ def generate(
 
     for page in pages:
         (pages_output_dir / f"{page.slug}.html").write_text(
-            render_page(page, pages, base_url, template, config), encoding="utf-8"
+            render_page(page, pages, base_url, page_url_prefix, template, config), encoding="utf-8"
         )
 
-    write_index(pages, pages_output_dir, base_url)
-    write_keywords_csv(pages, data_output_dir)
+    write_index(pages, pages_output_dir, base_url, page_url_prefix)
+    write_keywords_csv(pages, data_output_dir, page_url_prefix)
     write_keyword_library(data_output_dir, keyword_library)
-    write_sitemap(pages, data_output_dir, base_url)
-    write_urls_txt(pages, data_output_dir, base_url)
+    write_sitemap(pages, data_output_dir, base_url, page_url_prefix)
+    write_urls_txt(pages, data_output_dir, base_url, page_url_prefix)
+
+
+def derive_page_url_prefix(pages_output_dir: Path, explicit_prefix: str | None) -> str:
+    raw = explicit_prefix.strip() if explicit_prefix else pages_output_dir.name
+    prefix = raw.strip("/")
+    if not prefix:
+        raise SystemExit("页面URL前缀不能为空，请检查 --pages-output 或 --pages-url-prefix")
+    return prefix
 
 
 def resolve_input_path(path_str: str) -> Path:
@@ -350,6 +359,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="批量生成简历模板 SEO 页面")
     parser.add_argument("--pages-output", default="pages", help="HTML输出目录，默认 pages")
     parser.add_argument("--data-output", default="dist", help="数据输出目录（csv/xml/txt），默认 dist")
+    parser.add_argument("--pages-url-prefix", default="", help="页面URL前缀，默认取 --pages-output 目录名")
     parser.add_argument("--base-url", default="https://example.com", help="站点基础 URL")
     parser.add_argument("--total", type=int, default=200, help="生成页面数量，默认 200")
     parser.add_argument("--config", default="seo_automation/config/resume_config.json", help="关键词与参数配置文件")
@@ -366,8 +376,11 @@ def main() -> None:
     keyword_config = json.loads(keyword_library_path.read_text(encoding="utf-8"))
     template = Template(template_path.read_text(encoding="utf-8"))
 
+    pages_output_dir = Path(args.pages_output)
+    page_url_prefix = derive_page_url_prefix(pages_output_dir, args.pages_url_prefix)
+
     generate(
-        pages_output_dir=Path(args.pages_output),
+        pages_output_dir=pages_output_dir,
         data_output_dir=Path(args.data_output),
         base_url=args.base_url,
         total=args.total,
@@ -375,6 +388,7 @@ def main() -> None:
         keyword_config=keyword_config,
         template=template,
         min_keyword_library=args.min_keyword_library,
+        page_url_prefix=page_url_prefix,
     )
 
 

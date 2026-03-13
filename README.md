@@ -14,12 +14,15 @@
 python3 seo_automation/generate_site.py \
   --pages-output pages \
   --data-output dist \
+  --pages-url-prefix pages \
   --base-url https://example.com \
   --total 50000 \
   --min-keyword-library 50000
 ```
 
 > 说明：脚本会先校验词库规模（默认至少 50,000），再按 `--total` 生成页面与数据。若基础组合不足，会自动从 `keyword_library.json` 补齐，因此支持生成 5w+ 页面。页面文件命名为“编号-关键词.html”（例如 `1-互联网简历模板可编辑.html`）。
+
+> 当 `--pages-output` 改成 `pages2` 等目录时，可直接设置 `--pages-url-prefix pages2`，这样 `canonical`、`keywords.csv`、`sitemap.xml`、`urls.txt` 中链接会与实际目录保持一致。
 
 ## 输出结构
 
