@@ -26,7 +26,7 @@ def slugify(text: str) -> str:
     cleaned = text.replace(" ", "-").replace("/", "-")
     safe_chars: list[str] = []
     for ch in cleaned:
-        if ch.isalnum() or ch in "-_":
+        if ch.isascii() and (ch.isalnum() or ch in "-_"):
             safe_chars.append(ch.lower())
         else:
             safe_chars.append(f"u{ord(ch):x}")

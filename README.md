@@ -59,3 +59,28 @@ python3 seo_automation/generate_site.py \
 - `regions` `question_prefixes` `years`
 
 > 当前默认词库为「简历App」领域词。后续如果要做 PPT 等其他行业，只需替换 `seo_automation/keyword_library.json` 的词项即可。
+
+
+## 搜索引擎提交
+
+先确保已经生成 `dist/urls.txt` 和 `dist/sitemap.xml`，然后按引擎选择命令：
+
+### IndexNow
+
+```bash
+python3 seo_automation/submit_search_engines.py   --engine indexnow   --site-url https://example.com   --url-list dist/urls.txt   --key <your_indexnow_key>   --key-location https://example.com/<your_indexnow_key>.txt
+```
+
+### 百度主动推送
+
+```bash
+python3 seo_automation/submit_search_engines.py   --engine baidu   --site-url https://example.com   --url-list dist/urls.txt   --token <your_baidu_token>
+```
+
+### Google Sitemap Ping
+
+```bash
+python3 seo_automation/submit_search_engines.py   --engine google   --site-url https://example.com   --sitemap-url https://example.com/dist/sitemap.xml
+```
+
+> 说明：脚本会输出 JSON 响应（状态码和返回体），用于确认提交是否成功。
