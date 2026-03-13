@@ -24,6 +24,18 @@ python3 seo_automation/generate_site.py \
 
 > 当 `--pages-output` 改成 `pages2` 等目录时，可直接设置 `--pages-url-prefix pages2`，这样 `canonical`、`keywords.csv`、`sitemap.xml`、`urls.txt` 中链接会与实际目录保持一致。
 
+例如你的场景：
+
+```bash
+python3 seo_automation/generate_site.py \
+  --pages-output pages2 \
+  --data-output dist \
+  --pages-url-prefix pages2 \
+  --base-url https://www.qc-freetemplates.com/resumes/1/ \
+  --total 100 \
+  --min-keyword-library 100
+```
+
 ## 输出结构
 
 - `pages/`
