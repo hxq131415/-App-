@@ -57,3 +57,5 @@ python3 seo_automation/generate_site.py \
 - `products` `modifiers` `intents`
 - `audiences` `scenarios` `platforms`
 - `regions` `question_prefixes` `years`
+
+> 当前默认词库为「简历App」领域词。后续如果要做 PPT 等其他行业，只需替换 `seo_automation/keyword_library.json` 的词项即可。
