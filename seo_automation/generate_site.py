@@ -266,9 +266,9 @@ def render_index(site_url: str, brand_name: str, pages: list[Page], language: st
 """
 
 
-def build_sitemap(site_url: str, pages: list[Page]) -> str:
+def build_sitemap(site_url: str, pages: list[Page], include_index: bool) -> str:
     now = dt.date.today().isoformat()
-    urls = [f"{site_url.rstrip('/')}/index.html"] + [p.canonical_url for p in pages]
+    urls = ([f"{site_url.rstrip('/')}/index.html"] if include_index else []) + [p.canonical_url for p in pages]
     nodes = "\n".join(
         f"  <url><loc>{u}</loc><lastmod>{now}</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>"
         for u in urls
@@ -280,28 +280,40 @@ def build_sitemap(site_url: str, pages: list[Page]) -> str:
 """
 
 
-def write_outputs(output_dir: pathlib.Path, site_url: str, brand_name: str, download_url: str, pages: list[Page], related_count: int, language: str, keyword_library: list[str], clean_output: bool) -> None:
+def write_outputs(output_dir: pathlib.Path, site_url: str, brand_name: str, download_url: str, pages: list[Page], related_count: int, language: str, keyword_library: list[str], clean_output: bool, generate_pages: bool) -> None:
     pages_dir = output_dir / "pages"
     previews_dir = output_dir / "previews"
     output_dir.mkdir(parents=True, exist_ok=True)
-    pages_dir.mkdir(parents=True, exist_ok=True)
-    previews_dir.mkdir(parents=True, exist_ok=True)
 
     if clean_output:
-        for old in pages_dir.glob("*.html"):
-            old.unlink()
-        for old in previews_dir.glob("*.svg"):
-            old.unlink()
+        if pages_dir.exists():
+            for old in pages_dir.glob("*.html"):
+                old.unlink()
+        if previews_dir.exists():
+            for old in previews_dir.glob("*.svg"):
+                old.unlink()
+        index_path = output_dir / "index.html"
+        if index_path.exists():
+            index_path.unlink()
 
-    for idx, page in enumerate(pages):
-        related = related_pages(pages, idx, related_count)
-        (pages_dir / f"{page.slug}.html").write_text(
-            render_page(page, related, language, download_url), encoding="utf-8"
-        )
-        (output_dir / page.preview_svg).write_text(preview_svg(page.keyword), encoding="utf-8")
+    if generate_pages:
+        pages_dir.mkdir(parents=True, exist_ok=True)
+        previews_dir.mkdir(parents=True, exist_ok=True)
+        for idx, page in enumerate(pages):
+            related = related_pages(pages, idx, related_count)
+            (pages_dir / f"{page.slug}.html").write_text(
+                render_page(page, related, language, download_url), encoding="utf-8"
+            )
+            (output_dir / page.preview_svg).write_text(preview_svg(page.keyword), encoding="utf-8")
 
-    (output_dir / "index.html").write_text(render_index(site_url, brand_name, pages, language), encoding="utf-8")
-    (output_dir / "sitemap.xml").write_text(build_sitemap(site_url, pages), encoding="utf-8")
+        (output_dir / "index.html").write_text(render_index(site_url, brand_name, pages, language), encoding="utf-8")
+    else:
+        if pages_dir.exists() and not any(pages_dir.iterdir()):
+            pages_dir.rmdir()
+        if previews_dir.exists() and not any(previews_dir.iterdir()):
+            previews_dir.rmdir()
+
+    (output_dir / "sitemap.xml").write_text(build_sitemap(site_url, pages, include_index=generate_pages), encoding="utf-8")
 
     with (output_dir / "keywords.csv").open("w", encoding="utf-8", newline="") as f:
         writer = csv.writer(f)
@@ -316,7 +328,8 @@ def write_outputs(output_dir: pathlib.Path, site_url: str, brand_name: str, down
             writer.writerow([kw])
 
     with (output_dir / "urls.txt").open("w", encoding="utf-8") as f:
-        f.write(f"{site_url.rstrip('/')}/index.html\n")
+        if generate_pages:
+            f.write(f"{site_url.rstrip('/')}/index.html\n")
         for p in pages:
             f.write(f"{p.canonical_url}\n")
 
@@ -334,6 +347,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--language", default="zh-CN", help="HTML language tag")
     parser.add_argument("--output-dir", default="dist", help="Output directory")
     parser.add_argument("--clean-output", action="store_true", help="Clean old pages/previews before generation")
+    parser.add_argument("--generate-pages", action="store_true", help="Generate HTML/SVG pages and index")
     return parser.parse_args()
 
 
@@ -361,10 +375,11 @@ def main() -> None:
         language=args.language,
         keyword_library=keyword_library,
         clean_output=args.clean_output,
+        generate_pages=args.generate_pages,
     )
 
     print(
-        f"Keyword library size={len(keyword_library)}; generated pages={len(pages)} in {args.output_dir}"
+        f"Keyword library size={len(keyword_library)}; planned pages={len(pages)}; html_svg_generated={args.generate_pages} in {args.output_dir}"
     )
 
 

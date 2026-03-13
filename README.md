@@ -5,8 +5,8 @@
 ## 能力清单
 
 1. 自动生成关键词库（默认要求 5w+）
-2. 高质量落地页模板（每页独立标题/描述 + 差异内容 + 预览图 + 相关推荐 + 二维码下载 + 下载引导）
-3. 根据关键词库批量生成 HTML 页面
+2. 高质量落地页模板（可选生成：每页独立标题/描述 + 差异内容 + 预览图 + 相关推荐 + 二维码下载 + 下载引导）
+3. 根据关键词库批量生成页面数据（可选输出 HTML/SVG）
 4. 自动生成 sitemap.xml
 5. 自动生成站内内链
 6. 自动提交搜索引擎（IndexNow / Baidu / Google）
@@ -43,12 +43,27 @@ python3 seo_automation/generate_site.py \
   --page-count 500 \
   --min-keyword-library 50000 \
   --clean-output
+  # 默认仅生成关键词/URL/sitemap 等数据，不生成 html/svg
+```
+
+
+如需真正输出落地页 HTML/SVG（默认关闭），追加：
+
+```bash
+python3 seo_automation/generate_site.py \
+  --site-url https://example.com \
+  --brand-name "通用下载站" \
+  --download-url "https://example.com/download" \
+  --page-count 500 \
+  --min-keyword-library 50000 \
+  --clean-output \
+  --generate-pages
 ```
 
 生成结果默认输出到 `dist/`：
-- `dist/pages/*.html`：落地页
-- `dist/index.html`：导航页
-- `dist/previews/*.svg`：每页示意图
+- `dist/pages/*.html`：落地页（仅 `--generate-pages` 时）
+- `dist/index.html`：导航页（仅 `--generate-pages` 时）
+- `dist/previews/*.svg`：每页示意图（仅 `--generate-pages` 时）
 - `dist/sitemap.xml`：站点地图
 - `dist/urls.txt`：URL 列表（可提交）
 - `dist/keywords.csv`：已生成页面关键词
@@ -91,6 +106,7 @@ python3 seo_automation/submit_search_engines.py \
 - `--related-count`：每页相关推荐内链数
 - `--seed`：追加自定义业务词（可重复）
 - `--clean-output`：生成前清理历史页面和示意图，避免旧文件残留
+- `--generate-pages`：开启后才会生成 HTML/SVG 页面文件（默认不生成）
 
 ---
 
