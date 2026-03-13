@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>${title}</title>
+<meta name="description" content="${description}">
+<meta name="keywords" content="${keywords_meta}">
+<meta name="robots" content="index,follow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="canonical" href="${canonical}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Inter,Arial;background:#f7f9fc;color:#333;}
+.container{width:min(1200px,92%);margin:auto;}
+.header{background:#fff;border-bottom:1px solid #eee;}
+.header-inner{display:flex;align-items:center;justify-content:space-between;padding:20px 0;gap:16px;}
+.logo{font-size:22px;font-weight:700;color:#2563eb;}
+.search{width:min(420px,100%);padding:12px 16px;border-radius:30px;border:1px solid #ddd;background:#fafafa;}
+.hero{padding:80px 0;background:linear-gradient(135deg,#2563eb,#4f46e5);color:#fff;}
+.hero-inner{display:flex;align-items:center;justify-content:space-between;gap:28px;}
+.hero h1{font-size:44px;margin-bottom:20px;line-height:1.25;}
+.hero p{font-size:18px;opacity:0.95;margin-bottom:30px;line-height:1.7;}
+.download{display:flex;align-items:center;gap:20px;}
+.qrcode{background:#fff;padding:15px;border-radius:12px;}
+.qrcode img{width:140px;}
+.section{padding:70px 0;}
+.section-title{font-size:32px;margin-bottom:40px;text-align:center;}
+.templates{display:grid;grid-template-columns:repeat(4,1fr);gap:30px;}
+.card{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.08);transition:all .3s;text-decoration:none;color:#333;display:block;}
+.card:hover{transform:translateY(-6px);box-shadow:0 20px 40px rgba(0,0,0,.15);}
+.card img{width:100%;}
+.card-title{padding:16px;font-weight:600;text-align:center;}
+.review-scroll{overflow:hidden;width:100%;}
+.review-track{display:flex;gap:20px;width:max-content;animation:scrollReviews 45s linear infinite;}
+.review-card{min-width:300px;background:#fff;padding:20px;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,.08);line-height:1.6;}
+@keyframes scrollReviews{0%{transform:translateX(0);}100%{transform:translateX(-45%);}}
+.faq{max-width:900px;margin:auto;}
+.faq-item{background:#fff;padding:20px;border-radius:12px;margin-bottom:15px;box-shadow:0 8px 20px rgba(0,0,0,.05);}
+.cta{background:linear-gradient(135deg,#4f46e5,#2563eb);color:#fff;padding:80px 0;text-align:center;}
+.cta img{width:160px;margin-top:20px;}
+.footer{background:#111827;color:#9ca3af;padding:50px 0;margin-top:60px;}
+.footer p{max-width:900px;margin:auto;text-align:center;line-height:1.8;}
+@media (max-width: 1024px){.templates{grid-template-columns:repeat(2,1fr);}.hero h1{font-size:34px;}}
+@media (max-width: 700px){.hero-inner{flex-direction:column;}.templates{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<header class="header"><div class="container header-inner"><div class="logo">简历模板库</div><input class="search" placeholder="搜索简历模板，例如：程序员简历模板"></div></header>
+<section class="hero"><div class="container hero-inner"><div><h1>${keyword}</h1><p>针对${industry}岗位优化的${style}专题页面，支持 Word 编辑 / PDF 导出，帮助你更快产出可投递简历。</p><div class="download"><div class="qrcode"><img src="images/qrcode.png" alt="简历模板APP下载二维码"></div><div><p>扫码下载APP</p><p>免费获取全部模板</p></div></div></div><img src="images/preview.png" width="420" alt="简历模板APP界面预览"></div></section>
+<section class="section"><div class="container"><h2 class="section-title">热门简历模板</h2><div class="templates">${related_html}</div></div></section>
+<section class="section"><div class="container"><h2 class="section-title">用户真实评价</h2><div class="review-scroll"><div class="review-track">${reviews_html}</div></div></div></section>
+<section class="section"><div class="container"><h2 class="section-title">常见问题</h2><div class="faq">${faq_html}</div></div></section>
+<section class="cta"><div class="container"><h2>立即下载简历模板APP</h2><p>${keyword} 一键套用，快速修改</p><img src="images/qrcode.png" alt="APP下载二维码"></div></section>
+<section class="section"><div class="container"><h2 class="section-title">热门简历模板下载</h2><p style="max-width:900px;margin:auto;line-height:1.9;text-align:center;color:#555">${seo_p1}<br><br>${seo_p2}</p></div></section>
+<footer class="footer"><div class="container"><p>© 2026 简历模板库 Resume Template Hub 提供${industry}岗位与多行业求职模板下载服务。</p></div></footer>
+</body>
+</html>
