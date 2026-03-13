@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from itertools import product
 from pathlib import Path
 
@@ -32,6 +33,48 @@ def parse_args() -> argparse.Namespace:
         help="Keep original pages from input at the beginning",
     )
     return parser.parse_args()
+
+
+
+
+def resolve_input_path(raw_path: str) -> Path:
+    """Resolve input path from CWD first, then repository root."""
+    path = Path(raw_path)
+    candidates = []
+
+    if path.is_absolute():
+        candidates.append(path)
+    else:
+        candidates.append((Path.cwd() / path).resolve())
+        repo_root = Path(__file__).resolve().parent.parent
+        candidates.append((repo_root / path).resolve())
+
+    unique_candidates = []
+    seen = set()
+    for candidate in candidates:
+        key = str(candidate)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique_candidates.append(candidate)
+
+    for candidate in unique_candidates:
+        if candidate.exists() and candidate.is_file():
+            return candidate
+
+    checked = "\n".join(f"- {c}" for c in unique_candidates)
+    raise FileNotFoundError(
+        f"Input file not found: {raw_path}\nTried:\n{checked}\n"
+        "Tip: run from repository root or provide an absolute --input path."
+    )
+
+
+def resolve_output_path(raw_path: str) -> Path:
+    path = Path(raw_path)
+    if path.is_absolute():
+        return path
+
+    return (Path.cwd() / path).resolve()
 
 
 def read_json(path: Path) -> dict:
@@ -202,14 +245,18 @@ def generate_pages(seed_payload: dict, target_count: int, keep_seed_pages: bool)
 
 def main() -> None:
     args = parse_args()
+    try:
+        payload = read_json(resolve_input_path(args.input))
+    except FileNotFoundError as exc:
+        print(str(exc), file=sys.stderr)
+        raise SystemExit(1)
     if args.target_count < 50000 or args.target_count > 100000:
         print("Warning: target-count is typically recommended between 50000 and 100000")
 
-    payload = read_json(Path(args.input))
     pages = generate_pages(payload, args.target_count, args.keep_seed_pages)
     output_payload = {"site": payload["site"], "pages": pages}
 
-    output_path = Path(args.output)
+    output_path = resolve_output_path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
         json.dumps(output_payload, ensure_ascii=False, indent=2),
