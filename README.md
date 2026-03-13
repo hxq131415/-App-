@@ -36,7 +36,8 @@ python3 seo_automation/generate_site.py \
 
 直接修改 `seo_automation/templates/landing_page.html` 即可替换页面结构；脚本会注入：
 - `${title}` `${description}` `${keywords_meta}` `${canonical}`
-- `${keyword}` `${industry}` `${style}`
+- `${keyword}` `${industry}` `${style}` `${app_name}`
+- `${preview_image_url}` `${qr_code_image_url}`
 - `${related_html}` `${reviews_html}` `${faq_html}`
 - `${seo_p1}` `${seo_p2}`
 
@@ -48,6 +49,9 @@ python3 seo_automation/generate_site.py \
 - `style_tags`
 - `cities`
 - `names`
+- `app_name`（页面展示的 App 名称）
+- `preview_image_url`（预览图 URL/路径）
+- `qr_code_image_url`（二维码图 URL/路径）
 
 在 `seo_automation/keyword_library.json` 中维护 5w+ 通用词库组合参数：
 - `products` `modifiers` `intents`

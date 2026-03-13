@@ -194,6 +194,10 @@ def render_page(page: PageData, pages: list[PageData], base_url: str, template: 
     related_html = render_related_cards(pages, page.idx - 1)
     seo_p1, seo_p2 = seo_paragraphs(page)
 
+    app_name = config.get("app_name", "简历模板APP")
+    preview_image_url = config.get("preview_image_url", "images/preview.png")
+    qr_code_image_url = config.get("qr_code_image_url", "images/qrcode.png")
+
     return template.safe_substitute(
         title=escape(title),
         description=escape(description),
@@ -202,6 +206,9 @@ def render_page(page: PageData, pages: list[PageData], base_url: str, template: 
         keyword=escape(page.keyword),
         industry=escape(page.industry),
         style=escape(page.style),
+        app_name=escape(app_name),
+        preview_image_url=escape(preview_image_url),
+        qr_code_image_url=escape(qr_code_image_url),
         faq_html=faq_html,
         reviews_html=reviews_html,
         related_html=related_html,

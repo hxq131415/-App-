@@ -57,7 +57,7 @@ a{text-decoration:none;color:inherit;}
 <body>
 <header class="topbar">
   <div class="container topbar-inner">
-    <div class="brand">简历模板库</div>
+    <div class="brand">${app_name}</div>
     <nav class="nav">
       <a href="#templates">热门模板</a>
       <a href="#reviews">用户评价</a>
@@ -68,7 +68,7 @@ a{text-decoration:none;color:inherit;}
 </header>
 
 <div class="container">
-  <div class="breadcrumb">首页 / 简历模板 / ${industry} / ${style}</div>
+  <div class="breadcrumb">首页 / ${app_name} / ${industry} / ${style}</div>
 
   <section class="hero">
     <div>
@@ -82,11 +82,11 @@ a{text-decoration:none;color:inherit;}
       </div>
       <div class="hero-cta">
         <a class="btn" href="#download">立即下载模板</a>
-        <div class="qr"><img src="images/qrcode.png" alt="扫码下载简历模板APP"></div>
+        <div class="qr"><img src="${qr_code_image_url}" alt="扫码下载${app_name}"></div>
       </div>
     </div>
     <div class="hero-panel">
-      <img src="images/preview.png" alt="${keyword} 预览图">
+      <img src="${preview_image_url}" alt="${keyword} 预览图">
       <div class="hero-metrics">
         <div><strong>120w+</strong><br>用户下载</div>
         <div><strong>2000+</strong><br>模板数量</div>
@@ -116,12 +116,12 @@ a{text-decoration:none;color:inherit;}
   </section>
 
   <section id="download" class="cta">
-    <h2>扫描二维码下载简历模板 APP</h2>
+    <h2>扫描二维码下载 ${app_name}</h2>
     <p>${keyword} 一键套用，立即生成可投递简历</p>
-    <img src="images/qrcode.png" alt="APP 下载二维码">
+    <img src="${qr_code_image_url}" alt="${app_name} 下载二维码">
   </section>
 
-  <footer class="footer">© 2026 简历模板库 Resume Template Hub · 覆盖 ${industry} 与全行业求职模板下载服务。</footer>
+  <footer class="footer">© 2026 ${app_name} · 覆盖 ${industry} 与全行业求职模板下载服务。</footer>
 </div>
 </body>
 </html>
