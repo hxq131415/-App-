@@ -1,386 +1,315 @@
 #!/usr/bin/env python3
-"""Generate scalable SEO keyword library and landing pages."""
-
 from __future__ import annotations
 
 import argparse
 import csv
-import datetime as dt
-import html
-import json
-import pathlib
-import random
-import re
 from dataclasses import dataclass
-from typing import Iterable
-from urllib.parse import quote_plus
+from datetime import date
+from html import escape
+from pathlib import Path
+from xml.etree.ElementTree import Element, ElementTree, SubElement
 
-
-CTA_BLOCKS = [
-    "点击下方按钮立即下载，约 30 秒完成安装并开始使用。",
-    "支持扫码下载或直接点击下载链接，按提示即可快速完成部署。",
-    "建议先查看版本说明与兼容提示，再进行一键下载。",
-    "本页提供稳定下载入口，推荐优先使用官方最新版。",
+BASE_KEYWORDS = [
+    "简历模板",
+    "个人简历模板",
+    "求职简历模板",
+    "应届生简历模板",
+    "实习简历模板",
+    "英文简历模板",
+    "双语简历模板",
+    "创意简历模板",
+    "极简简历模板",
+    "免费简历模板",
 ]
 
-CONTENT_VARIATIONS = [
-    "本页提供核心功能、安装流程与常见问题，帮助你快速上手。",
-    "结合实际使用场景整理了版本差异、推荐配置和避坑建议。",
-    "围绕新手与进阶用户需求，提供下载、安装和功能使用全流程指引。",
-    "除了下载入口，还整理了相关工具推荐与替代方案，便于横向对比。",
+INDUSTRIES = [
+    "互联网",
+    "产品经理",
+    "UI设计",
+    "前端开发",
+    "后端开发",
+    "数据分析",
+    "新媒体运营",
+    "市场营销",
+    "电商运营",
+    "人力资源",
+    "财务会计",
+    "行政文员",
+    "销售顾问",
+    "客服专员",
+    "项目管理",
+    "机械工程",
+    "土木工程",
+    "生物医药",
+    "教育培训",
+    "外贸业务",
 ]
 
-FEATURE_TAGS = [
-    "高质量模板", "多端同步", "稳定更新", "低门槛上手", "轻量流畅", "高兼容性", "快速导出", "隐私保护"
-]
+STYLE_TAGS = ["可编辑", "Word版", "PDF版", "一页式", "ATS友好"]
+CITIES = ["北京", "上海", "深圳", "广州", "杭州", "成都", "南京", "武汉"]
+NAMES = ["王志强", "刘思雨", "陈凯", "赵磊", "周雨晨", "林嘉宁", "孙博文", "何雅婷"]
 
 
 @dataclass
-class Page:
+class PageData:
+    idx: int
     keyword: str
     slug: str
-    title: str
-    description: str
-    content: str
-    cta: str
-    preview_svg: str
-    qr_url: str
-    canonical_url: str
-    feature_line: str
+    industry: str
+    base: str
+    style: str
 
 
 def slugify(text: str) -> str:
-    cleaned = re.sub(r"[^\w\u4e00-\u9fff\-\s]", "", text).strip().lower()
-    cleaned = re.sub(r"\s+", "-", cleaned)
-    return cleaned or "landing-page"
+    cleaned = text.replace(" ", "-").replace("/", "-")
+    safe_chars: list[str] = []
+    for ch in cleaned:
+        if ch.isalnum() or ch in "-_":
+            safe_chars.append(ch.lower())
+        else:
+            safe_chars.append(f"u{ord(ch):x}")
+    return "resume-" + "".join(safe_chars)
 
 
-def load_keyword_config(path: pathlib.Path) -> dict:
-    return json.loads(path.read_text(encoding="utf-8"))
+def build_keywords(total: int = 200) -> list[tuple[str, str, str]]:
+    combos: list[tuple[str, str, str]] = []
+    for base in BASE_KEYWORDS:
+        for industry in INDUSTRIES:
+            for style in STYLE_TAGS:
+                combos.append((industry, base, style))
+                if len(combos) >= total:
+                    return combos
+    return combos[:total]
 
 
-def unique_keep_order(seq: Iterable[str]) -> list[str]:
-    out: list[str] = []
-    seen = set()
-    for item in seq:
-        if item and item not in seen:
-            out.append(item)
-            seen.add(item)
-    return out
+def style_hint(style: str) -> str:
+    mapping = {
+        "可编辑": "适合快速二次修改",
+        "Word版": "便于在 Word 中细致排版",
+        "PDF版": "适合直接投递，版式更稳定",
+        "一页式": "信息更聚焦，适合校招与初筛",
+        "ATS友好": "关键词命中率更高，更易通过筛选",
+    }
+    return mapping.get(style, "支持多场景求职")
 
 
-def generate_keyword_library(config: dict, seeds: list[str]) -> list[str]:
-    products = unique_keep_order((config.get("products") or []) + seeds)
-    modifiers = unique_keep_order(config.get("modifiers") or [])
-    intents = unique_keep_order(config.get("intents") or [])
-    audiences = unique_keep_order(config.get("audiences") or [])
-    scenarios = unique_keep_order(config.get("scenarios") or [])
-    platforms = unique_keep_order(config.get("platforms") or [])
-    regions = unique_keep_order(config.get("regions") or [])
-    years = unique_keep_order(config.get("years") or [])
-    question_prefixes = unique_keep_order(config.get("question_prefixes") or [])
-
-    keywords: list[str] = []
-
-    # Pattern A: 产品+修饰+意图
-    for p in products:
-        for m in modifiers:
-            for i in intents:
-                keywords.append(f"{p}{m}{i}")
-
-    # Pattern B: 人群 + 产品 + 意图
-    for a in audiences:
-        for p in products:
-            for i in intents:
-                keywords.append(f"{a}{p}{i}")
-
-    # Pattern C: 场景 + 产品 + 平台
-    for s in scenarios:
-        for p in products:
-            for pf in platforms:
-                keywords.append(f"{s}{p}{pf}")
-
-    # Pattern D: 地域 + 产品 + 意图
-    for r in regions:
-        for p in products:
-            for i in intents:
-                keywords.append(f"{r}{p}{i}")
-
-    # Pattern E: 年份 + 产品 + 意图 + 平台
-    for y in years:
-        for p in products:
-            for i in intents:
-                for pf in platforms:
-                    keywords.append(f"{y}{p}{i}{pf}")
-
-    # Pattern F: 问句意图
-    for q in question_prefixes:
-        for p in products:
-            for i in intents[:10]:
-                keywords.append(f"{q}选择{p}{i}")
-
-    return unique_keep_order(keywords)
-
-
-def preview_svg(keyword: str) -> str:
-    escaped = html.escape(keyword)
-    return f"""<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='630'>
-  <defs>
-    <linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>
-      <stop offset='0%' stop-color='#0b1023'/>
-      <stop offset='100%' stop-color='#1e40af'/>
-    </linearGradient>
-  </defs>
-  <rect width='1200' height='630' fill='url(#g)'/>
-  <text x='80' y='250' fill='white' font-size='56' font-family='Arial, sans-serif' font-weight='bold'>SEO 高质量专题页</text>
-  <text x='80' y='340' fill='#c7d2fe' font-size='38' font-family='Arial, sans-serif'>{escaped}</text>
-  <text x='80' y='430' fill='#dbeafe' font-size='28' font-family='Arial, sans-serif'>独立标题 · 独立描述 · 可收录结构</text>
-</svg>"""
-
-
-def build_pages(site_url: str, brand_name: str, download_url: str, keywords: list[str]) -> list[Page]:
-    pages: list[Page] = []
-    base = site_url.rstrip("/")
-
-    for i, kw in enumerate(keywords):
-        slug = slugify(kw)
-        title = f"{kw} - {brand_name}下载与使用指南"
-        desc = f"{brand_name}提供{kw}专题，含安装步骤、示意图、相关推荐、二维码下载与版本建议。"
-        content = CONTENT_VARIATIONS[i % len(CONTENT_VARIATIONS)]
-        cta = CTA_BLOCKS[i % len(CTA_BLOCKS)]
-        feature_line = "、".join(random.sample(FEATURE_TAGS, 4))
-        preview_path = f"previews/{slug}.svg"
-        qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=220x220&data={quote_plus(download_url)}"
-        canonical = f"{base}/pages/{slug}.html"
-
-        pages.append(
-            Page(
-                keyword=kw,
-                slug=slug,
-                title=title,
-                description=desc,
-                content=content,
-                cta=cta,
-                preview_svg=preview_path,
-                qr_url=qr_url,
-                canonical_url=canonical,
-                feature_line=feature_line,
-            )
-        )
-    return pages
-
-
-def related_pages(pages: list[Page], index: int, count: int) -> list[Page]:
-    if len(pages) <= 1:
-        return []
-    out = []
-    n = len(pages)
-    step = 7
-    cur = (index + step) % n
-    while len(out) < count:
-        if cur != index:
-            out.append(pages[cur])
-        cur = (cur + step) % n
-    return out
-
-
-def render_page(page: Page, related: list[Page], language: str, download_url: str) -> str:
-    related_items = "\n".join(
-        f'<li><a href="../pages/{r.slug}.html">{html.escape(r.keyword)}</a></li>' for r in related
+def seo_paragraphs(page: PageData) -> tuple[str, str]:
+    p1 = (
+        f"{page.keyword}专题为 {page.industry} 方向求职者定制，覆盖个人优势、项目经历、成果数据与岗位关键词布局。"
+        f"本页模板强调“{style_hint(page.style)}”，可用于校招、社招与转岗场景。"
     )
-    return f"""<!doctype html>
-<html lang="{language}">
+    p2 = (
+        f"如果你正在准备 {page.industry} 岗位面试，建议优先补充与 JD 对齐的技能词，并用量化结果呈现价值。"
+        f"例如“负责 A/B 测试后转化率提升 27%”“独立交付 3 个版本上线”。"
+    )
+    return p1, p2
+
+
+def build_faq(page: PageData) -> list[tuple[str, str]]:
+    return [
+        (f"{page.keyword}适合哪些人？", f"适合目标岗位为{page.industry}的求职者，尤其适配{page.base}场景。"),
+        (f"{page.industry}岗位该突出什么内容？", "建议突出可量化成果、业务目标与协作结果，避免只罗列职责。"),
+        (f"{page.style}模板有什么优势？", style_hint(page.style) + "，同时支持继续扩展项目经历与技能模块。"),
+        ("支持哪些文件格式？", "支持 Word 编辑与 PDF 导出，方便修改和投递。"),
+        ("可以用于招聘网站投递吗？", "可以，页面结构遵循主流招聘系统识别逻辑。"),
+    ]
+
+
+def build_reviews(page: PageData) -> list[str]:
+    roles = [page.industry, "产品经理", "运营", "开发工程师"]
+    reviews: list[str] = []
+    for i in range(8):
+        name = NAMES[(page.idx + i) % len(NAMES)]
+        city = CITIES[(page.idx + i) % len(CITIES)]
+        role = roles[i % len(roles)]
+        score_text = ["面试邀约明显增加", "排版很专业", "关键词更容易命中", "修改效率很高"][i % 4]
+        reviews.append(f"★★★★★ {page.keyword}{score_text}。<br><strong>{name} · {role} · {city}</strong>")
+    return reviews
+
+
+def render_related_cards(pages: list[PageData], current_index: int, count: int = 8) -> str:
+    related: list[PageData] = []
+    for offset in range(1, len(pages)):
+        if len(related) >= count:
+            break
+        related.append(pages[(current_index + offset) % len(pages)])
+    return "\n".join(
+        f'<a class="card" href="./{p.slug}.html"><img src="images/template{(i % 8) + 1}.png" alt="{escape(p.keyword)}"><div class="card-title">{escape(p.keyword)}</div></a>'
+        for i, p in enumerate(related)
+    )
+
+
+def render_page(page: PageData, pages: list[PageData], base_url: str) -> str:
+    title = f"{page.keyword}免费下载 - {page.industry}高通过率简历模板"
+    description = (
+        f"{page.keyword}精选下载，面向{page.industry}岗位，提供{page.style}模板与可复用项目描述，"
+        "支持Word编辑与PDF导出，快速生成专业简历。"
+    )
+    canonical = f"{base_url.rstrip('/')}/{page.slug}.html"
+    keywords_meta = f"{page.keyword},{page.industry}简历模板,{page.style},简历模板下载,Word简历模板,免费简历模板"
+
+    faq_html = "\n".join(
+        f'<div class="faq-item"><h3>{escape(q)}</h3><p>{escape(a)}</p></div>' for q, a in build_faq(page)
+    )
+    reviews_html = "\n".join(f'<div class="review-card">{r}</div>' for r in build_reviews(page))
+    related_html = render_related_cards(pages, page.idx - 1)
+    seo_p1, seo_p2 = seo_paragraphs(page)
+
+    return f"""<!DOCTYPE html>
+<html lang="zh">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>{html.escape(page.title)}</title>
-  <meta name="description" content="{html.escape(page.description)}" />
-  <link rel="canonical" href="{page.canonical_url}" />
-  <meta property="og:title" content="{html.escape(page.title)}" />
-  <meta property="og:description" content="{html.escape(page.description)}" />
-  <meta property="og:image" content="../{page.preview_svg}" />
-  <style>
-    body {{font-family: Inter, -apple-system, sans-serif; margin:0; background:#f7f9fc; color:#0f172a;}}
-    .container {{max-width: 1040px; margin: 0 auto; padding: 32px 20px 64px;}}
-    .hero,.card {{background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 10px 30px rgba(2,6,23,.08);}}
-    .preview img {{width:100%; border-radius:14px; border:1px solid #e2e8f0;}}
-    .grid {{display:grid; grid-template-columns:2fr 1fr; gap:20px; margin-top:20px;}}
-    .cta-btn {{display:inline-block; background:#2563eb; color:#fff; padding:12px 18px; border-radius:10px; text-decoration:none; font-weight:700;}}
-    .muted {{color:#475569;}}
-    .chips span {{display:inline-block;padding:6px 10px;margin:4px;border-radius:999px;background:#eff6ff;color:#1e3a8a;font-size:13px;}}
-    ul {{padding-left: 18px;}}
-  </style>
+<meta charset="UTF-8">
+<title>{escape(title)}</title>
+<meta name="description" content="{escape(description)}">
+<meta name="keywords" content="{escape(keywords_meta)}">
+<meta name="robots" content="index,follow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="canonical" href="{escape(canonical)}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{{margin:0;padding:0;box-sizing:border-box;}}
+body{{font-family:Inter,Arial;background:#f7f9fc;color:#333;}}
+.container{{width:min(1200px,92%);margin:auto;}}
+.header{{background:#fff;border-bottom:1px solid #eee;}}
+.header-inner{{display:flex;align-items:center;justify-content:space-between;padding:20px 0;gap:16px;}}
+.logo{{font-size:22px;font-weight:700;color:#2563eb;}}
+.search{{width:min(420px,100%);padding:12px 16px;border-radius:30px;border:1px solid #ddd;background:#fafafa;}}
+.hero{{padding:80px 0;background:linear-gradient(135deg,#2563eb,#4f46e5);color:#fff;}}
+.hero-inner{{display:flex;align-items:center;justify-content:space-between;gap:28px;}}
+.hero h1{{font-size:44px;margin-bottom:20px;line-height:1.25;}}
+.hero p{{font-size:18px;opacity:0.95;margin-bottom:30px;line-height:1.7;}}
+.download{{display:flex;align-items:center;gap:20px;}}
+.qrcode{{background:#fff;padding:15px;border-radius:12px;}}
+.qrcode img{{width:140px;}}
+.section{{padding:70px 0;}}
+.section-title{{font-size:32px;margin-bottom:40px;text-align:center;}}
+.templates{{display:grid;grid-template-columns:repeat(4,1fr);gap:30px;}}
+.card{{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.08);transition:all .3s;text-decoration:none;color:#333;display:block;}}
+.card:hover{{transform:translateY(-6px);box-shadow:0 20px 40px rgba(0,0,0,.15);}}
+.card img{{width:100%;}}
+.card-title{{padding:16px;font-weight:600;text-align:center;}}
+.review-scroll{{overflow:hidden;width:100%;}}
+.review-track{{display:flex;gap:20px;width:max-content;animation:scrollReviews 45s linear infinite;}}
+.review-card{{min-width:300px;background:#fff;padding:20px;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,.08);line-height:1.6;}}
+@keyframes scrollReviews{{0%{{transform:translateX(0);}}100%{{transform:translateX(-45%);}}}}
+.faq{{max-width:900px;margin:auto;}}
+.faq-item{{background:#fff;padding:20px;border-radius:12px;margin-bottom:15px;box-shadow:0 8px 20px rgba(0,0,0,.05);}}
+.cta{{background:linear-gradient(135deg,#4f46e5,#2563eb);color:#fff;padding:80px 0;text-align:center;}}
+.cta img{{width:160px;margin-top:20px;}}
+.footer{{background:#111827;color:#9ca3af;padding:50px 0;margin-top:60px;}}
+.footer p{{max-width:900px;margin:auto;text-align:center;line-height:1.8;}}
+@media (max-width: 1024px){{.templates{{grid-template-columns:repeat(2,1fr);}}.hero h1{{font-size:34px;}}}}
+@media (max-width: 700px){{.hero-inner{{flex-direction:column;}}.templates{{grid-template-columns:1fr;}}}}
+</style>
 </head>
 <body>
-  <div class="container">
-    <section class="hero">
-      <h1>{html.escape(page.keyword)}</h1>
-      <p class="muted">{html.escape(page.description)}</p>
-      <div class="chips">{''.join(f'<span>{html.escape(x)}</span>' for x in page.feature_line.split('、'))}</div>
-      <div class="preview"><img src="../{page.preview_svg}" alt="{html.escape(page.keyword)} 预览图"/></div>
-    </section>
-    <div class="grid">
-      <article class="card">
-        <h2>内容导读</h2>
-        <p>{html.escape(page.content)}</p>
-        <h3>清晰下载引导</h3>
-        <p>{html.escape(page.cta)}</p>
-        <p><a class="cta-btn" href="{download_url}" rel="nofollow">立即下载</a></p>
-      </article>
-      <aside class="card">
-        <h3>扫码下载</h3>
-        <img src="{page.qr_url}" width="220" height="220" alt="扫码下载二维码"/>
-        <p class="muted">扫码可在手机端直接访问下载地址。</p>
-        <h3>相关推荐</h3>
-        <ul>{related_items}</ul>
-      </aside>
-    </div>
-  </div>
+<header class="header"><div class="container header-inner"><div class="logo">简历模板库</div><input class="search" placeholder="搜索简历模板，例如：程序员简历模板"></div></header>
+<section class="hero"><div class="container hero-inner"><div><h1>{escape(page.keyword)}</h1><p>针对{escape(page.industry)}岗位优化的{escape(page.style)}专题页面，支持 Word 编辑 / PDF 导出，帮助你更快产出可投递简历。</p><div class="download"><div class="qrcode"><img src="images/qrcode.png" alt="简历模板APP下载二维码"></div><div><p>扫码下载APP</p><p>免费获取全部模板</p></div></div></div><img src="images/preview.png" width="420" alt="简历模板APP界面预览"></div></section>
+<section class="section"><div class="container"><h2 class="section-title">热门简历模板</h2><div class="templates">{related_html}</div></div></section>
+<section class="section"><div class="container"><h2 class="section-title">用户真实评价</h2><div class="review-scroll"><div class="review-track">{reviews_html}</div></div></div></section>
+<section class="section"><div class="container"><h2 class="section-title">常见问题</h2><div class="faq">{faq_html}</div></div></section>
+<section class="cta"><div class="container"><h2>立即下载简历模板APP</h2><p>{escape(page.keyword)} 一键套用，快速修改</p><img src="images/qrcode.png" alt="APP下载二维码"></div></section>
+<section class="section"><div class="container"><h2 class="section-title">热门简历模板下载</h2><p style="max-width:900px;margin:auto;line-height:1.9;text-align:center;color:#555">{escape(seo_p1)}<br><br>{escape(seo_p2)}</p></div></section>
+<footer class="footer"><div class="container"><p>© 2026 简历模板库 Resume Template Hub 提供{escape(page.industry)}岗位与多行业求职模板下载服务。</p></div></footer>
 </body>
 </html>
 """
 
 
-def render_index(site_url: str, brand_name: str, pages: list[Page], language: str) -> str:
-    links = "\n".join(
-        f'<li><a href="pages/{p.slug}.html">{html.escape(p.keyword)}</a> <small>— {html.escape(p.description)}</small></li>'
+def write_index(pages: list[PageData], output_dir: Path, base_url: str) -> None:
+    items = "\n".join(
+        f'<li><a href="./{p.slug}.html">{p.idx:03d}. {escape(p.keyword)}</a> <small>({base_url.rstrip("/")}/{p.slug}.html)</small></li>'
         for p in pages
     )
-    return f"""<!doctype html>
-<html lang="{language}">
+    html = f"""<!doctype html>
+<html lang="zh-CN">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>{html.escape(brand_name)}专题聚合页</title>
-  <meta name="description" content="{html.escape(brand_name)}自动生成的SEO专题导航页" />
-  <link rel="canonical" href="{site_url.rstrip('/')}/index.html" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>200个简历模板SEO页面目录</title>
+  <meta name="description" content="批量生成的200个简历模板SEO页面目录，可直接用于静态站点部署。" />
 </head>
 <body>
-  <main style="max-width:980px;margin:30px auto;font-family:Arial,sans-serif;line-height:1.6;">
-    <h1>{html.escape(brand_name)} SEO 专题导航</h1>
-    <p>页面自动生成：独立标题、独立描述、差异内容、示意图、相关推荐、二维码下载与清晰下载引导。</p>
-    <ul>{links}</ul>
+  <main>
+    <h1>200个简历模板SEO页面目录</h1>
+    <ol>{items}</ol>
   </main>
 </body>
 </html>
 """
+    (output_dir / "index.html").write_text(html, encoding="utf-8")
 
 
-def build_sitemap(site_url: str, pages: list[Page], include_index: bool) -> str:
-    now = dt.date.today().isoformat()
-    urls = ([f"{site_url.rstrip('/')}/index.html"] if include_index else []) + [p.canonical_url for p in pages]
-    nodes = "\n".join(
-        f"  <url><loc>{u}</loc><lastmod>{now}</lastmod><changefreq>daily</changefreq><priority>0.8</priority></url>"
-        for u in urls
-    )
-    return f"""<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-{nodes}
-</urlset>
-"""
+def write_keywords_csv(pages: list[PageData], output_dir: Path) -> None:
+    with (output_dir / "keywords.csv").open("w", encoding="utf-8", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["id", "keyword", "slug", "industry", "base", "style"])
+        for p in pages:
+            writer.writerow([p.idx, p.keyword, p.slug, p.industry, p.base, p.style])
 
 
-def write_outputs(output_dir: pathlib.Path, site_url: str, brand_name: str, download_url: str, pages: list[Page], related_count: int, language: str, keyword_library: list[str], clean_output: bool, generate_pages: bool) -> None:
-    pages_dir = output_dir / "pages"
-    previews_dir = output_dir / "previews"
+def write_keyword_library(output_dir: Path) -> None:
+    with (output_dir / "keyword_library.csv").open("w", encoding="utf-8", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["industry", "base", "style", "keyword"])
+        for base in BASE_KEYWORDS:
+            for industry in INDUSTRIES:
+                for style in STYLE_TAGS:
+                    writer.writerow([industry, base, style, f"{industry}{base}{style}"])
+
+
+def write_sitemap(pages: list[PageData], output_dir: Path, base_url: str) -> None:
+    urlset = Element("urlset", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
+    today = date.today().isoformat()
+    for p in pages:
+        url = SubElement(urlset, "url")
+        SubElement(url, "loc").text = f"{base_url.rstrip('/')}/{p.slug}.html"
+        SubElement(url, "lastmod").text = today
+        SubElement(url, "changefreq").text = "weekly"
+        SubElement(url, "priority").text = "0.8"
+
+    index_url = SubElement(urlset, "url")
+    SubElement(index_url, "loc").text = f"{base_url.rstrip('/')}/index.html"
+    SubElement(index_url, "lastmod").text = today
+    SubElement(index_url, "changefreq").text = "daily"
+    SubElement(index_url, "priority").text = "1.0"
+    ElementTree(urlset).write(output_dir / "sitemap.xml", encoding="utf-8", xml_declaration=True)
+
+
+def write_urls_txt(pages: list[PageData], output_dir: Path, base_url: str) -> None:
+    lines = [f"{base_url.rstrip('/')}/{p.slug}.html" for p in pages]
+    lines.append(f"{base_url.rstrip('/')}/index.html")
+    (output_dir / "urls.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def generate(output_dir: Path, base_url: str, total: int) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
+    for pattern in ("*.html", "keywords.csv", "keyword_library.csv", "sitemap.xml", "urls.txt"):
+        for old_file in output_dir.glob(pattern):
+            old_file.unlink()
 
-    if clean_output:
-        if pages_dir.exists():
-            for old in pages_dir.glob("*.html"):
-                old.unlink()
-        if previews_dir.exists():
-            for old in previews_dir.glob("*.svg"):
-                old.unlink()
-        index_path = output_dir / "index.html"
-        if index_path.exists():
-            index_path.unlink()
+    pages: list[PageData] = []
+    for idx, (industry, base, style) in enumerate(build_keywords(total), start=1):
+        keyword = f"{industry}{base}{style}"
+        pages.append(PageData(idx, keyword, slugify(f"{idx}-{keyword}"), industry, base, style))
 
-    if generate_pages:
-        pages_dir.mkdir(parents=True, exist_ok=True)
-        previews_dir.mkdir(parents=True, exist_ok=True)
-        for idx, page in enumerate(pages):
-            related = related_pages(pages, idx, related_count)
-            (pages_dir / f"{page.slug}.html").write_text(
-                render_page(page, related, language, download_url), encoding="utf-8"
-            )
-            (output_dir / page.preview_svg).write_text(preview_svg(page.keyword), encoding="utf-8")
+    for page in pages:
+        (output_dir / f"{page.slug}.html").write_text(render_page(page, pages, base_url), encoding="utf-8")
 
-        (output_dir / "index.html").write_text(render_index(site_url, brand_name, pages, language), encoding="utf-8")
-    else:
-        if pages_dir.exists() and not any(pages_dir.iterdir()):
-            pages_dir.rmdir()
-        if previews_dir.exists() and not any(previews_dir.iterdir()):
-            previews_dir.rmdir()
-
-    (output_dir / "sitemap.xml").write_text(build_sitemap(site_url, pages, include_index=generate_pages), encoding="utf-8")
-
-    with (output_dir / "keywords.csv").open("w", encoding="utf-8", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(["keyword", "slug", "url", "title", "description"])
-        for p in pages:
-            writer.writerow([p.keyword, p.slug, p.canonical_url, p.title, p.description])
-
-    with (output_dir / "keyword_library.csv").open("w", encoding="utf-8", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(["keyword"])
-        for kw in keyword_library:
-            writer.writerow([kw])
-
-    with (output_dir / "urls.txt").open("w", encoding="utf-8") as f:
-        if generate_pages:
-            f.write(f"{site_url.rstrip('/')}/index.html\n")
-        for p in pages:
-            f.write(f"{p.canonical_url}\n")
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="SEO landing pages generator")
-    parser.add_argument("--site-url", required=True, help="Public site URL, e.g. https://example.com")
-    parser.add_argument("--brand-name", required=True, help="Brand name used in title/description")
-    parser.add_argument("--download-url", required=True, help="Primary download target URL")
-    parser.add_argument("--seed", action="append", default=[], help="Custom seed keyword, can repeat")
-    parser.add_argument("--keyword-config", default="seo_automation/keyword_library.json", help="Keyword library config json path")
-    parser.add_argument("--min-keyword-library", type=int, default=50000, help="Minimum expected keyword library size")
-    parser.add_argument("--page-count", type=int, default=200, help="Number of pages to generate from keyword library")
-    parser.add_argument("--related-count", type=int, default=6, help="Related links count per page")
-    parser.add_argument("--language", default="zh-CN", help="HTML language tag")
-    parser.add_argument("--output-dir", default="dist", help="Output directory")
-    parser.add_argument("--clean-output", action="store_true", help="Clean old pages/previews before generation")
-    parser.add_argument("--generate-pages", action="store_true", help="Generate HTML/SVG pages and index")
-    return parser.parse_args()
+    write_index(pages, output_dir, base_url)
+    write_keywords_csv(pages, output_dir)
+    write_keyword_library(output_dir)
+    write_sitemap(pages, output_dir, base_url)
+    write_urls_txt(pages, output_dir, base_url)
 
 
 def main() -> None:
-    args = parse_args()
-    random.seed(42)
-
-    config = load_keyword_config(pathlib.Path(args.keyword_config))
-    keyword_library = generate_keyword_library(config, args.seed)
-    if len(keyword_library) < args.min_keyword_library:
-        raise SystemExit(
-            f"关键词库规模不足：{len(keyword_library)}，低于 --min-keyword-library={args.min_keyword_library}"
-        )
-
-    chosen = keyword_library[: min(args.page_count, len(keyword_library))]
-    pages = build_pages(args.site_url, args.brand_name, args.download_url, chosen)
-
-    write_outputs(
-        output_dir=pathlib.Path(args.output_dir),
-        site_url=args.site_url,
-        brand_name=args.brand_name,
-        download_url=args.download_url,
-        pages=pages,
-        related_count=max(args.related_count, 1),
-        language=args.language,
-        keyword_library=keyword_library,
-        clean_output=args.clean_output,
-        generate_pages=args.generate_pages,
-    )
-
-    print(
-        f"Keyword library size={len(keyword_library)}; planned pages={len(pages)}; html_svg_generated={args.generate_pages} in {args.output_dir}"
-    )
+    parser = argparse.ArgumentParser(description="批量生成简历模板 SEO 页面")
+    parser.add_argument("--output", default="dist", help="输出目录，默认 dist")
+    parser.add_argument("--base-url", default="https://example.com", help="站点基础 URL")
+    parser.add_argument("--total", type=int, default=200, help="生成页面数量，默认 200")
+    args = parser.parse_args()
+    generate(Path(args.output), args.base_url, args.total)
 
 
 if __name__ == "__main__":
