@@ -71,3 +71,17 @@ python3 scripts/submit_search_engines.py \
 4. 运行提交脚本，主动推送 URL
 5. 在 Google Search Console / Bing Webmaster / 百度站长平台验证收录
 
+
+
+## 4) 生成 5-10 万关键词库（同结构 JSON）
+
+如果你要批量扩展落地页关键词库，可运行：
+
+```bash
+python3 scripts/generate_keyword_library.py   --input content/pages.json   --output content/pages.100k.json   --target-count 100000
+```
+
+说明：
+- 输出仍然是与你当前一致的结构：`{"site": {...}, "pages": [...]}`。
+- 可把 `pages.100k.json` 直接喂给 `scripts/seo_generate.py` 生成静态页。
+- 建议先用较小数量试跑（如 `--target-count 5000`）验证部署与构建耗时。
