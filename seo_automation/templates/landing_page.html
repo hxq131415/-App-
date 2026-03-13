@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>${title}</title>
+<meta name="description" content="${description}">
+<meta name="keywords" content="${keywords_meta}">
+<meta name="robots" content="index,follow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="canonical" href="${canonical}">
+<style>
+:root{--bg:#f4f7fc;--card:#fff;--text:#1f2937;--muted:#6b7280;--pri:#2563eb;--pri2:#4f46e5;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);}
+a{text-decoration:none;color:inherit;}
+.container{width:min(1180px,94%);margin:0 auto;}
+.topbar{background:#fff;border-bottom:1px solid #e8edf5;position:sticky;top:0;z-index:20;}
+.topbar-inner{display:flex;justify-content:space-between;align-items:center;padding:14px 0;gap:12px;}
+.brand{font-weight:800;color:#1d4ed8;font-size:22px;}
+.nav{display:flex;gap:18px;color:#475569;font-size:14px;}
+.breadcrumb{font-size:13px;color:#64748b;padding:12px 0;}
+.hero{background:linear-gradient(135deg,var(--pri),var(--pri2));color:#fff;border-radius:18px;padding:38px 34px;display:grid;grid-template-columns:1.25fr .75fr;gap:24px;box-shadow:0 14px 40px rgba(37,99,235,.22);}
+.hero h1{font-size:38px;line-height:1.25;margin-bottom:14px;}
+.hero p{line-height:1.8;opacity:.96;}
+.hero-tags{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 22px;}
+.hero-tags span{background:rgba(255,255,255,.18);padding:7px 12px;border-radius:999px;font-size:13px;}
+.hero-cta{display:flex;gap:14px;align-items:center;}
+.btn{background:#fff;color:#1d4ed8;font-weight:700;padding:12px 22px;border-radius:10px;display:inline-block;}
+.qr{background:#fff;padding:10px;border-radius:10px;}
+.qr img{width:96px;display:block;}
+.hero-panel{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:14px;}
+.hero-panel img{width:100%;border-radius:10px;display:block;}
+.hero-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px;}
+.hero-metrics div{background:rgba(255,255,255,.14);padding:10px;border-radius:10px;text-align:center;font-size:13px;}
+.section{margin-top:28px;}
+.section-title{font-size:28px;text-align:center;margin-bottom:20px;}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;}
+.card{background:var(--card);border-radius:14px;overflow:hidden;border:1px solid #e6edf8;box-shadow:0 8px 24px rgba(30,64,175,.08);display:block;}
+.card img{width:100%;display:block;aspect-ratio:4/3;object-fit:cover;background:#f1f5f9;}
+.card-title{padding:12px 14px;font-weight:650;line-height:1.5;font-size:14px;}
+.reviews{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;}
+.review-card{background:#fff;padding:14px;border-radius:12px;border:1px solid #e6edf8;box-shadow:0 6px 18px rgba(15,23,42,.06);font-size:14px;line-height:1.6;}
+.faq{max-width:950px;margin:0 auto;display:grid;gap:12px;}
+.faq-item{background:#fff;padding:16px;border-radius:12px;border:1px solid #e6edf8;}
+.faq-item h3{font-size:16px;margin-bottom:8px;}
+.faq-item p{color:var(--muted);line-height:1.7;}
+.seo-copy{background:#fff;border:1px solid #e6edf8;border-radius:14px;padding:24px;line-height:1.9;color:#334155;}
+.cta{margin-top:28px;background:linear-gradient(135deg,#1d4ed8,#4338ca);color:#fff;border-radius:16px;padding:30px;text-align:center;}
+.cta h2{font-size:30px;}
+.cta p{margin-top:8px;opacity:.95;}
+.cta img{margin-top:14px;width:132px;background:#fff;padding:8px;border-radius:10px;}
+.footer{margin-top:36px;padding:26px 0 40px;color:#64748b;text-align:center;line-height:1.8;font-size:14px;}
+@media (max-width:1080px){.hero{grid-template-columns:1fr;}.grid,.reviews{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media (max-width:680px){.topbar-inner{flex-direction:column;align-items:flex-start;}.hero{padding:24px 18px;}.hero h1{font-size:30px;}.grid,.reviews{grid-template-columns:1fr;}.section-title{font-size:24px;}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="container topbar-inner">
+    <div class="brand">${app_name}</div>
+    <nav class="nav">
+      <a href="#templates">热门模板</a>
+      <a href="#reviews">用户评价</a>
+      <a href="#faq">常见问题</a>
+      <a href="#download">立即下载</a>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+  <div class="breadcrumb">首页 / ${app_name} / ${industry} / ${style}</div>
+
+  <section class="hero">
+    <div>
+      <h1>${keyword}</h1>
+      <p>围绕 ${industry} 岗位打造的 ${style} 落地页，支持 Word 编辑与 PDF 导出，突出成果量化与岗位关键词布局，帮助你提升筛选通过率。</p>
+      <div class="hero-tags">
+        <span>${industry}专项</span>
+        <span>${style}</span>
+        <span>ATS 友好</span>
+        <span>扫码下载</span>
+      </div>
+      <div class="hero-cta">
+        <a class="btn" href="#download">立即下载模板</a>
+        <div class="qr"><img src="${qr_code_image_url}" alt="扫码下载${app_name}"></div>
+      </div>
+    </div>
+    <div class="hero-panel">
+      <img src="${preview_image_url}" alt="${keyword} 预览图">
+      <div class="hero-metrics">
+        <div><strong>120w+</strong><br>用户下载</div>
+        <div><strong>2000+</strong><br>模板数量</div>
+        <div><strong>4.9/5</strong><br>用户评分</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="templates" class="section">
+    <h2 class="section-title">相关推荐模板</h2>
+    <div class="grid">${related_html}</div>
+  </section>
+
+  <section id="reviews" class="section">
+    <h2 class="section-title">用户真实反馈</h2>
+    <div class="reviews">${reviews_html}</div>
+  </section>
+
+  <section id="faq" class="section">
+    <h2 class="section-title">常见问题</h2>
+    <div class="faq">${faq_html}</div>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">${keyword} 下载指南</h2>
+    <div class="seo-copy">${seo_p1}<br><br>${seo_p2}</div>
+  </section>
+
+  <section id="download" class="cta">
+    <h2>扫描二维码下载 ${app_name}</h2>
+    <p>${keyword} 一键套用，立即生成可投递简历</p>
+    <img src="${qr_code_image_url}" alt="${app_name} 下载二维码">
+  </section>
+
+  <footer class="footer">© 2026 ${app_name} · 覆盖 ${industry} 与全行业求职模板下载服务。</footer>
+</div>
+</body>
+</html>
