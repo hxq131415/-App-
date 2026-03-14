@@ -7,23 +7,31 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A00000000000000000000011 /* IDPhotoStudioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000001 /* IDPhotoStudioApp.swift */; };
-		A00000000000000000000012 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000002 /* ContentView.swift */; };
-		A00000000000000000000013 /* ImageMattingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000003 /* ImageMattingService.swift */; };
-		A00000000000000000000014 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000004 /* Assets.xcassets */; };
+		A00000000000000000000011 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000001 /* main.m */; };
+		A00000000000000000000012 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000003 /* AppDelegate.m */; };
+		A00000000000000000000013 /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000005 /* SceneDelegate.m */; };
+		A00000000000000000000014 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000007 /* ViewController.m */; };
+		A00000000000000000000015 /* ImageMattingService.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000009 /* ImageMattingService.m */; };
+		A00000000000000000000016 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000010 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		A00000000000000000000001 /* IDPhotoStudioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IDPhotoStudioApp.swift; sourceTree = "<group>"; };
-		A00000000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		A00000000000000000000003 /* ImageMattingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageMattingService.swift; sourceTree = "<group>"; };
-		A00000000000000000000004 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		A00000000000000000000005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		A00000000000000000000006 /* IDPhotoStudio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = IDPhotoStudio.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A00000000000000000000001 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		A00000000000000000000002 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		A00000000000000000000003 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		A00000000000000000000004 /* SceneDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SceneDelegate.h; sourceTree = "<group>"; };
+		A00000000000000000000005 /* SceneDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SceneDelegate.m; sourceTree = "<group>"; };
+		A00000000000000000000006 /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
+		A00000000000000000000007 /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
+		A00000000000000000000008 /* ImageMattingService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ImageMattingService.h; sourceTree = "<group>"; };
+		A00000000000000000000009 /* ImageMattingService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ImageMattingService.m; sourceTree = "<group>"; };
+		A00000000000000000000010 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A00000000000000000000020 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A00000000000000000000021 /* IDPhotoStudio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = IDPhotoStudio.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		A00000000000000000000021 /* Frameworks */ = {
+		A00000000000000000000031 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,30 +41,36 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		A00000000000000000000031 = {
+		A00000000000000000000041 = {
 			isa = PBXGroup;
 			children = (
-				A00000000000000000000032 /* IDPhotoStudio */,
-				A00000000000000000000033 /* Products */,
+				A00000000000000000000042 /* IDPhotoStudio */,
+				A00000000000000000000043 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		A00000000000000000000032 /* IDPhotoStudio */ = {
+		A00000000000000000000042 /* IDPhotoStudio */ = {
 			isa = PBXGroup;
 			children = (
-				A00000000000000000000001 /* IDPhotoStudioApp.swift */,
-				A00000000000000000000002 /* ContentView.swift */,
-				A00000000000000000000003 /* ImageMattingService.swift */,
-				A00000000000000000000004 /* Assets.xcassets */,
-				A00000000000000000000005 /* Info.plist */,
+				A00000000000000000000001 /* main.m */,
+				A00000000000000000000002 /* AppDelegate.h */,
+				A00000000000000000000003 /* AppDelegate.m */,
+				A00000000000000000000004 /* SceneDelegate.h */,
+				A00000000000000000000005 /* SceneDelegate.m */,
+				A00000000000000000000006 /* ViewController.h */,
+				A00000000000000000000007 /* ViewController.m */,
+				A00000000000000000000008 /* ImageMattingService.h */,
+				A00000000000000000000009 /* ImageMattingService.m */,
+				A00000000000000000000010 /* Assets.xcassets */,
+				A00000000000000000000020 /* Info.plist */,
 			);
 			path = IDPhotoStudio;
 			sourceTree = "<group>";
 		};
-		A00000000000000000000033 /* Products */ = {
+		A00000000000000000000043 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A00000000000000000000006 /* IDPhotoStudio.app */,
+				A00000000000000000000021 /* IDPhotoStudio.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -64,13 +78,13 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A00000000000000000000041 /* IDPhotoStudio */ = {
+		A00000000000000000000051 /* IDPhotoStudio */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A00000000000000000000051 /* Build configuration list for PBXNativeTarget "IDPhotoStudio" */;
+			buildConfigurationList = A00000000000000000000061 /* Build configuration list for PBXNativeTarget "IDPhotoStudio" */;
 			buildPhases = (
-				A00000000000000000000022 /* Sources */,
-				A00000000000000000000021 /* Frameworks */,
-				A00000000000000000000023 /* Resources */,
+				A00000000000000000000032 /* Sources */,
+				A00000000000000000000031 /* Frameworks */,
+				A00000000000000000000033 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -78,25 +92,19 @@
 			);
 			name = IDPhotoStudio;
 			productName = IDPhotoStudio;
-			productReference = A00000000000000000000006 /* IDPhotoStudio.app */;
+			productReference = A00000000000000000000021 /* IDPhotoStudio.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		A00000000000000000000040 /* Project object */ = {
+		A00000000000000000000050 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1530;
 				LastUpgradeCheck = 1530;
-				TargetAttributes = {
-					A00000000000000000000041 = {
-						CreatedOnToolsVersion = 15.3;
-					};
-				};
 			};
-			buildConfigurationList = A00000000000000000000050 /* Build configuration list for PBXProject "IDPhotoStudio" */;
+			buildConfigurationList = A00000000000000000000060 /* Build configuration list for PBXProject "IDPhotoStudio" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -104,101 +112,66 @@
 				en,
 				Base,
 			);
-			mainGroup = A00000000000000000000031;
-			productRefGroup = A00000000000000000000033 /* Products */;
+			mainGroup = A00000000000000000000041;
+			productRefGroup = A00000000000000000000043 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A00000000000000000000041 /* IDPhotoStudio */,
+				A00000000000000000000051 /* IDPhotoStudio */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		A00000000000000000000023 /* Resources */ = {
+		A00000000000000000000033 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A00000000000000000000014 /* Assets.xcassets in Resources */,
+				A00000000000000000000016 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		A00000000000000000000022 /* Sources */ = {
+		A00000000000000000000032 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A00000000000000000000011 /* IDPhotoStudioApp.swift in Sources */,
-				A00000000000000000000012 /* ContentView.swift in Sources */,
-				A00000000000000000000013 /* ImageMattingService.swift in Sources */,
+				A00000000000000000000011 /* main.m in Sources */,
+				A00000000000000000000012 /* AppDelegate.m in Sources */,
+				A00000000000000000000013 /* SceneDelegate.m in Sources */,
+				A00000000000000000000014 /* ViewController.m in Sources */,
+				A00000000000000000000015 /* ImageMattingService.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		A00000000000000000000060 /* Debug */ = {
+		A00000000000000000000070 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = dwarf;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
-				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
 		};
-		A00000000000000000000061 /* Release */ = {
+		A00000000000000000000071 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				ENABLE_NS_ASSERTIONS = NO;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				MTL_ENABLE_DEBUG_INFO = NO;
-				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
-				SWIFT_COMPILATION_MODE = wholemodule;
-				SWIFT_OPTIMIZATION_LEVEL = "-O";
 			};
 			name = Release;
 		};
-		A00000000000000000000062 /* Debug */ = {
+		A00000000000000000000072 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -208,8 +181,6 @@
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = IDPhotoStudio/Info.plist;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -219,13 +190,11 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.IDPhotoStudio;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
-		A00000000000000000000063 /* Release */ = {
+		A00000000000000000000073 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -244,8 +213,6 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.IDPhotoStudio;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -253,25 +220,25 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A00000000000000000000050 /* Build configuration list for PBXProject "IDPhotoStudio" */ = {
+		A00000000000000000000060 /* Build configuration list for PBXProject "IDPhotoStudio" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				A00000000000000000000060 /* Debug */,
-				A00000000000000000000061 /* Release */,
+				A00000000000000000000070 /* Debug */,
+				A00000000000000000000071 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A00000000000000000000051 /* Build configuration list for PBXNativeTarget "IDPhotoStudio" */ = {
+		A00000000000000000000061 /* Build configuration list for PBXNativeTarget "IDPhotoStudio" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				A00000000000000000000062 /* Debug */,
-				A00000000000000000000063 /* Release */,
+				A00000000000000000000072 /* Debug */,
+				A00000000000000000000073 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = A00000000000000000000040 /* Project object */;
+	rootObject = A00000000000000000000050 /* Project object */;
 }
