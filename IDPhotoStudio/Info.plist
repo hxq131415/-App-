@@ -39,6 +39,8 @@
     </dict>
     <key>UILaunchScreen</key>
     <dict/>
+    <key>NSCameraUsageDescription</key>
+    <string>用于自拍采集证件照并进行智能抠图。</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>用于读取照片进行证件照抠图换底色。</string>
     <key>NSPhotoLibraryAddUsageDescription</key>
