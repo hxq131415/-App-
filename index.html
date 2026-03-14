@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>证件照工坊 Pro</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-glow"></div>
+    <main class="app">
+      <header class="hero">
+        <h1>证件照工坊 <span>Pro</span></h1>
+        <p>一键换底色 · 智能裁切 · 高清下载，快速生成精美证件照</p>
+      </header>
+
+      <section class="panel controls">
+        <label class="upload">
+          <input id="fileInput" type="file" accept="image/*" />
+          <span>上传人像照片</span>
+        </label>
+
+        <div class="control-block">
+          <h3>尺寸预设</h3>
+          <div id="sizeGroup" class="chips"></div>
+        </div>
+
+        <div class="control-block">
+          <h3>背景色</h3>
+          <div id="bgGroup" class="swatches"></div>
+        </div>
+
+        <div class="control-block slider-wrap">
+          <label for="zoomRange">人像缩放：<strong id="zoomValue">100%</strong></label>
+          <input id="zoomRange" type="range" min="70" max="140" value="100" />
+        </div>
+
+        <button id="downloadBtn" class="primary" disabled>下载证件照</button>
+      </section>
+
+      <section class="panel preview">
+        <div class="canvas-card">
+          <canvas id="photoCanvas" width="413" height="579"></canvas>
+        </div>
+        <p class="hint">提示：上传正面免冠照片，拖动缩放可微调画面构图。</p>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

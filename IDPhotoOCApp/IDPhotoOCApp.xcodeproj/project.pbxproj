@@ -1,0 +1,296 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000000000000000000001 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000011 /* main.m */; };
+		A10000000000000000000002 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000012 /* AppDelegate.m */; };
+		A10000000000000000000003 /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000013 /* SceneDelegate.m */; };
+		A10000000000000000000004 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000014 /* ViewController.m */; };
+		A10000000000000000000005 /* IDPhotoProcessor.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000015 /* IDPhotoProcessor.m */; };
+		A10000000000000000000006 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000020 /* Assets.xcassets */; };
+		A10000000000000000000007 /* Vision.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A10000000000000000000021 /* Vision.framework */; };
+		A10000000000000000000008 /* CoreImage.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* CoreImage.framework */; };
+		A10000000000000000000009 /* Photos.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A10000000000000000000023 /* Photos.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A10000000000000000000010 /* IDPhotoOCApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IDPhotoOCApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000011 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		A10000000000000000000012 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		A10000000000000000000016 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		A10000000000000000000013 /* SceneDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SceneDelegate.m; sourceTree = "<group>"; };
+		A10000000000000000000017 /* SceneDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SceneDelegate.h; sourceTree = "<group>"; };
+		A10000000000000000000014 /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
+		A10000000000000000000018 /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
+		A10000000000000000000015 /* IDPhotoProcessor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = IDPhotoProcessor.m; sourceTree = "<group>"; };
+		A10000000000000000000019 /* IDPhotoProcessor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IDPhotoProcessor.h; sourceTree = "<group>"; };
+		A1000000000000000000001A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A10000000000000000000020 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A10000000000000000000021 /* Vision.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Vision.framework; path = System/Library/Frameworks/Vision.framework; sourceTree = SDKROOT; };
+		A10000000000000000000022 /* CoreImage.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreImage.framework; path = System/Library/Frameworks/CoreImage.framework; sourceTree = SDKROOT; };
+		A10000000000000000000023 /* Photos.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Photos.framework; path = System/Library/Frameworks/Photos.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A10000000000000000000030 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000007 /* Vision.framework in Frameworks */,
+				A10000000000000000000008 /* CoreImage.framework in Frameworks */,
+				A10000000000000000000009 /* Photos.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A10000000000000000000040 = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000041 /* IDPhotoOCApp */,
+				A10000000000000000000042 /* Products */,
+				A10000000000000000000043 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		A10000000000000000000041 /* IDPhotoOCApp */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000016 /* AppDelegate.h */,
+				A10000000000000000000012 /* AppDelegate.m */,
+				A10000000000000000000017 /* SceneDelegate.h */,
+				A10000000000000000000013 /* SceneDelegate.m */,
+				A10000000000000000000018 /* ViewController.h */,
+				A10000000000000000000014 /* ViewController.m */,
+				A10000000000000000000019 /* IDPhotoProcessor.h */,
+				A10000000000000000000015 /* IDPhotoProcessor.m */,
+				A10000000000000000000011 /* main.m */,
+				A10000000000000000000020 /* Assets.xcassets */,
+				A1000000000000000000001A /* Info.plist */,
+			);
+			path = IDPhotoOCApp;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000042 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000010 /* IDPhotoOCApp.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000043 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000021 /* Vision.framework */,
+				A10000000000000000000022 /* CoreImage.framework */,
+				A10000000000000000000023 /* Photos.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A10000000000000000000050 /* IDPhotoOCApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000070 /* Build configuration list for PBXNativeTarget "IDPhotoOCApp" */;
+			buildPhases = (
+				A10000000000000000000031 /* Sources */,
+				A10000000000000000000030 /* Frameworks */,
+				A10000000000000000000032 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = IDPhotoOCApp;
+			productName = IDPhotoOCApp;
+			productReference = A10000000000000000000010 /* IDPhotoOCApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A10000000000000000000060 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					A10000000000000000000050 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = A10000000000000000000071 /* Build configuration list for PBXProject "IDPhotoOCApp" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A10000000000000000000040;
+			productRefGroup = A10000000000000000000042 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A10000000000000000000050 /* IDPhotoOCApp */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A10000000000000000000032 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000006 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A10000000000000000000031 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000001 /* main.m in Sources */,
+				A10000000000000000000002 /* AppDelegate.m in Sources */,
+				A10000000000000000000003 /* SceneDelegate.m in Sources */,
+				A10000000000000000000004 /* ViewController.m in Sources */,
+				A10000000000000000000005 /* IDPhotoProcessor.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A10000000000000000000080 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = IDPhotoOCApp/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.IDPhotoOCApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A10000000000000000000081 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = IDPhotoOCApp/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.IDPhotoOCApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		A10000000000000000000082 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		A10000000000000000000083 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A10000000000000000000070 /* Build configuration list for PBXNativeTarget "IDPhotoOCApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000080 /* Debug */,
+				A10000000000000000000081 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000000000000000000071 /* Build configuration list for PBXProject "IDPhotoOCApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000082 /* Debug */,
+				A10000000000000000000083 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A10000000000000000000060 /* Project object */;
+}
