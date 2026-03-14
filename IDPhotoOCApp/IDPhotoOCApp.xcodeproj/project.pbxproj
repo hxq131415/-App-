@@ -13,6 +13,9 @@
 		A10000000000000000000004 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000014 /* ViewController.m */; };
 		A10000000000000000000005 /* IDPhotoProcessor.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000015 /* IDPhotoProcessor.m */; };
 		A10000000000000000000006 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000020 /* Assets.xcassets */; };
+		A10000000000000000000007 /* Vision.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A10000000000000000000021 /* Vision.framework */; };
+		A10000000000000000000008 /* CoreImage.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* CoreImage.framework */; };
+		A10000000000000000000009 /* Photos.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A10000000000000000000023 /* Photos.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +31,9 @@
 		A10000000000000000000019 /* IDPhotoProcessor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IDPhotoProcessor.h; sourceTree = "<group>"; };
 		A1000000000000000000001A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A10000000000000000000020 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A10000000000000000000021 /* Vision.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Vision.framework; path = System/Library/Frameworks/Vision.framework; sourceTree = SDKROOT; };
+		A10000000000000000000022 /* CoreImage.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreImage.framework; path = System/Library/Frameworks/CoreImage.framework; sourceTree = SDKROOT; };
+		A10000000000000000000023 /* Photos.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Photos.framework; path = System/Library/Frameworks/Photos.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -35,6 +41,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A10000000000000000000007 /* Vision.framework in Frameworks */,
+				A10000000000000000000008 /* CoreImage.framework in Frameworks */,
+				A10000000000000000000009 /* Photos.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -46,6 +55,7 @@
 			children = (
 				A10000000000000000000041 /* IDPhotoOCApp */,
 				A10000000000000000000042 /* Products */,
+				A10000000000000000000043 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -73,6 +83,16 @@
 				A10000000000000000000010 /* IDPhotoOCApp.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000043 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000021 /* Vision.framework */,
+				A10000000000000000000022 /* CoreImage.framework */,
+				A10000000000000000000023 /* Photos.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

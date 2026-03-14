@@ -1,33 +1,32 @@
 # IDPhotoOCApp（可直接运行的 Objective-C 工程）
 
-这是一个完整的 **UIKit + Objective-C** iOS 工程骨架，打开 `IDPhotoOCApp.xcodeproj` 即可运行（需 macOS + Xcode）。
+这是一个完整的 **UIKit + Objective-C** iOS 工程，打开 `IDPhotoOCApp.xcodeproj` 即可运行（需 macOS + Xcode）。
 
-## 功能
-- 从系统相册选择照片
-- 证件照规格切换：一寸 / 二寸 / 小二寸 / 护照
-- 背景色切换：蓝底 / 白底 / 红底 / 灰底
-- 缩放构图（滑杆）
-- 导出到系统相册
+## 现在已支持
+- 一键换底色（蓝/白/红/灰）
+- 智能裁切（基于人脸检测自动构图）
+- 高清下载（PNG 导出分享）
+- 常见证件照规格（1寸/2寸/小2寸/护照）
+- 保存到系统相册
+
+> 人像分割换底色使用 Vision 框架：iOS 15+ 为最佳效果；低版本会自动回退为普通贴图。
 
 ## 目录结构
 - `IDPhotoOCApp.xcodeproj`：Xcode 工程文件
 - `IDPhotoOCApp/main.m`：应用入口
 - `IDPhotoOCApp/AppDelegate.*`、`SceneDelegate.*`：应用生命周期
-- `IDPhotoOCApp/ViewController.*`：主界面交互
-- `IDPhotoOCApp/IDPhotoProcessor.*`：证件照渲染核心
-- `IDPhotoOCApp/Info.plist`：权限与场景配置
+- `IDPhotoOCApp/ViewController.*`：页面与交互
+- `IDPhotoOCApp/IDPhotoProcessor.*`：智能裁切 + 人像分割 + 渲染核心
+- `IDPhotoOCApp/Info.plist`：权限配置
 - `IDPhotoOCApp/Assets.xcassets`：资源目录
 
 ## 运行步骤
 1. 用 Xcode 打开：`IDPhotoOCApp/IDPhotoOCApp.xcodeproj`
-2. 在 Target > Signing & Capabilities 设置你的 Team
-3. 修改 Bundle Identifier（如有冲突）
-4. 选择模拟器或真机，点击 Run
+2. 在 Target > Signing & Capabilities 设置 Team
+3. 如有需要修改 Bundle Identifier
+4. 运行到模拟器或真机
 
-## 权限说明
-已在 `Info.plist` 中配置：
+## 权限
+已配置：
 - `NSPhotoLibraryUsageDescription`
 - `NSPhotoLibraryAddUsageDescription`
-
-## 备注
-容器环境无法执行 iOS 编译（无 Xcode / iOS SDK），但工程结构与入口、Target 配置、源码均已补齐。
