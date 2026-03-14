@@ -67,14 +67,25 @@ static NSString *const MattingErrorDomain = @"com.idphotostudio.matting";
 - (nullable CIImage *)personMaskFromImage:(CGImageRef)cgImage
                                orientation:(CGImagePropertyOrientation)orientation
                                      error:(NSError **)error {
+    VNImageRequestHandler *handler = [[VNImageRequestHandler alloc] initWithCGImage:cgImage orientation:orientation options:@{}];
+
+    NSError *visionError = nil;
     VNGeneratePersonSegmentationRequest *request = [[VNGeneratePersonSegmentationRequest alloc] init];
     request.qualityLevel = VNGeneratePersonSegmentationRequestQualityLevelAccurate;
     request.outputPixelFormat = kCVPixelFormatType_OneComponent8;
     request.usesCPUOnly = NO;
-
-    VNImageRequestHandler *handler = [[VNImageRequestHandler alloc] initWithCGImage:cgImage orientation:orientation options:@{}];
-    NSError *visionError = nil;
     [handler performRequests:@[request] error:&visionError];
+
+    if (visionError != nil) {
+        // Fallback: some devices/simulators fail to create GPU/ANE inference context.
+        visionError = nil;
+        request = [[VNGeneratePersonSegmentationRequest alloc] init];
+        request.qualityLevel = VNGeneratePersonSegmentationRequestQualityLevelAccurate;
+        request.outputPixelFormat = kCVPixelFormatType_OneComponent8;
+        request.usesCPUOnly = YES;
+        [handler performRequests:@[request] error:&visionError];
+    }
+
     if (visionError != nil) {
         if (error) {
             *error = visionError;
