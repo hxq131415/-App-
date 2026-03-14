@@ -12,6 +12,7 @@
 		A00000000000000000000013 /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000005 /* SceneDelegate.m */; };
 		A00000000000000000000014 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000007 /* ViewController.m */; };
 		A00000000000000000000015 /* ImageMattingService.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000009 /* ImageMattingService.m */; };
+		A00000000000000000000017 /* EditorViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000019 /* EditorViewController.m */; };
 		A00000000000000000000016 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000010 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -26,6 +27,8 @@
 		A00000000000000000000008 /* ImageMattingService.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ImageMattingService.h; sourceTree = "<group>"; };
 		A00000000000000000000009 /* ImageMattingService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ImageMattingService.m; sourceTree = "<group>"; };
 		A00000000000000000000010 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A00000000000000000000018 /* EditorViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EditorViewController.h; sourceTree = "<group>"; };
+		A00000000000000000000019 /* EditorViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = EditorViewController.m; sourceTree = "<group>"; };
 		A00000000000000000000020 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A00000000000000000000021 /* IDPhotoStudio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = IDPhotoStudio.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -61,6 +64,8 @@
 				A00000000000000000000007 /* ViewController.m */,
 				A00000000000000000000008 /* ImageMattingService.h */,
 				A00000000000000000000009 /* ImageMattingService.m */,
+				A00000000000000000000018 /* EditorViewController.h */,
+				A00000000000000000000019 /* EditorViewController.m */,
 				A00000000000000000000010 /* Assets.xcassets */,
 				A00000000000000000000020 /* Info.plist */,
 			);
@@ -143,6 +148,7 @@
 				A00000000000000000000013 /* SceneDelegate.m in Sources */,
 				A00000000000000000000014 /* ViewController.m in Sources */,
 				A00000000000000000000015 /* ImageMattingService.m in Sources */,
+				A00000000000000000000017 /* EditorViewController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -18,7 +18,8 @@ static NSString *const MattingErrorDomain = @"com.idphotostudio.matting";
 }
 
 - (UIImage *)processImage:(UIImage *)image backgroundColor:(UIColor *)backgroundColor error:(NSError **)error {
-    CGImageRef cgImage = image.CGImage;
+    UIImage *normalized = [self normalizedImage:image];
+    CGImageRef cgImage = normalized.CGImage;
     if (cgImage == nil) {
         if (error) {
             *error = [NSError errorWithDomain:MattingErrorDomain code:100 userInfo:@{NSLocalizedDescriptionKey: @"无法读取图片像素。"}];
@@ -26,15 +27,16 @@ static NSString *const MattingErrorDomain = @"com.idphotostudio.matting";
         return nil;
     }
 
-    CIImage *maskImage = [self personMaskFromImage:cgImage orientation:[self cgOrientationFromUIImageOrientation:image.imageOrientation] error:error];
+    CIImage *maskImage = [self personMaskFromImage:cgImage orientation:kCGImagePropertyOrientationUp error:error];
     if (maskImage == nil) {
         return nil;
     }
 
     CIImage *inputImage = [CIImage imageWithCGImage:cgImage];
     CGSize targetSize = inputImage.extent.size;
+
     CIImage *resizedMask = [self resizeMask:maskImage toSize:targetSize];
-    CIImage *refinedMask = [self softenMask:resizedMask];
+    CIImage *refinedMask = [self strengthenMask:resizedMask];
 
     CIImage *background = [[CIImage imageWithColor:[[CIColor alloc] initWithColor:backgroundColor]] imageByCroppingToRect:inputImage.extent];
 
@@ -59,7 +61,7 @@ static NSString *const MattingErrorDomain = @"com.idphotostudio.matting";
         return nil;
     }
 
-    UIImage *result = [UIImage imageWithCGImage:rendered scale:image.scale orientation:image.imageOrientation];
+    UIImage *result = [UIImage imageWithCGImage:rendered scale:normalized.scale orientation:UIImageOrientationUp];
     CGImageRelease(rendered);
     return result;
 }
@@ -77,7 +79,6 @@ static NSString *const MattingErrorDomain = @"com.idphotostudio.matting";
     [handler performRequests:@[request] error:&visionError];
 
     if (visionError != nil) {
-        // Fallback: some devices/simulators fail to create GPU/ANE inference context.
         visionError = nil;
         request = [[VNGeneratePersonSegmentationRequest alloc] init];
         request.qualityLevel = VNGeneratePersonSegmentationRequestQualityLevelAccurate;
@@ -109,40 +110,55 @@ static NSString *const MattingErrorDomain = @"com.idphotostudio.matting";
     CGFloat scaleY = targetSize.height / CGRectGetHeight(mask.extent);
     CIImage *scaled = [mask imageByApplyingTransform:CGAffineTransformMakeScale(scaleX, scaleY)];
 
-    CIFilter *clamp = [CIFilter filterWithName:@"CIAffineClamp"];
-    [clamp setValue:scaled forKey:kCIInputImageKey];
-    [clamp setValue:[NSValue valueWithCGAffineTransform:CGAffineTransformIdentity] forKey:kCIInputTransformKey];
-    CIImage *clamped = clamp.outputImage ?: scaled;
-
-    return [clamped imageByCroppingToRect:CGRectMake(0, 0, targetSize.width, targetSize.height)];
+    CIFilter *lanczos = [CIFilter filterWithName:@"CILanczosScaleTransform"];
+    [lanczos setValue:scaled forKey:kCIInputImageKey];
+    [lanczos setValue:@1.0 forKey:kCIInputScaleKey];
+    [lanczos setValue:@1.0 forKey:kCIInputAspectRatioKey];
+    CIImage *resized = lanczos.outputImage ?: scaled;
+    return [resized imageByCroppingToRect:CGRectMake(0, 0, targetSize.width, targetSize.height)];
 }
 
-- (CIImage *)softenMask:(CIImage *)mask {
+- (CIImage *)strengthenMask:(CIImage *)mask {
+    CIFilter *maximum = [CIFilter filterWithName:@"CIMorphologyMaximum"];
+    [maximum setValue:mask forKey:kCIInputImageKey];
+    [maximum setValue:@6.0 forKey:kCIInputRadiusKey];
+    CIImage *expanded = maximum.outputImage ?: mask;
+
+    CIFilter *minimum = [CIFilter filterWithName:@"CIMorphologyMinimum"];
+    [minimum setValue:expanded forKey:kCIInputImageKey];
+    [minimum setValue:@3.0 forKey:kCIInputRadiusKey];
+    CIImage *closed = minimum.outputImage ?: expanded;
+
     CIFilter *gaussian = [CIFilter filterWithName:@"CIGaussianBlur"];
-    [gaussian setValue:mask forKey:kCIInputImageKey];
-    [gaussian setValue:@1.2 forKey:kCIInputRadiusKey];
-    CIImage *blurred = [gaussian.outputImage imageByCroppingToRect:mask.extent] ?: mask;
+    [gaussian setValue:closed forKey:kCIInputImageKey];
+    [gaussian setValue:@1.8 forKey:kCIInputRadiusKey];
+    CIImage *blurred = [gaussian.outputImage imageByCroppingToRect:mask.extent] ?: closed;
 
     CIFilter *controls = [CIFilter filterWithName:@"CIColorControls"];
     [controls setValue:blurred forKey:kCIInputImageKey];
-    [controls setValue:@1.15 forKey:kCIInputContrastKey];
-    [controls setValue:@0 forKey:kCIInputBrightnessKey];
-    [controls setValue:@0 forKey:kCIInputSaturationKey];
+    [controls setValue:@1.35 forKey:kCIInputContrastKey];
+    [controls setValue:@0.0 forKey:kCIInputBrightnessKey];
+    [controls setValue:@0.0 forKey:kCIInputSaturationKey];
+    CIImage *contrasted = controls.outputImage ?: blurred;
 
-    return [controls.outputImage imageByCroppingToRect:mask.extent] ?: mask;
+    CIFilter *clamp = [CIFilter filterWithName:@"CIColorClamp"];
+    [clamp setValue:contrasted forKey:kCIInputImageKey];
+    [clamp setValue:[CIVector vectorWithX:0.04 Y:0.04 Z:0.04 W:0.04] forKey:@"inputMinComponents"];
+    [clamp setValue:[CIVector vectorWithX:1.0 Y:1.0 Z:1.0 W:1.0] forKey:@"inputMaxComponents"];
+
+    return [clamp.outputImage imageByCroppingToRect:mask.extent] ?: contrasted;
 }
 
-- (CGImagePropertyOrientation)cgOrientationFromUIImageOrientation:(UIImageOrientation)orientation {
-    switch (orientation) {
-        case UIImageOrientationUp: return kCGImagePropertyOrientationUp;
-        case UIImageOrientationDown: return kCGImagePropertyOrientationDown;
-        case UIImageOrientationLeft: return kCGImagePropertyOrientationLeft;
-        case UIImageOrientationRight: return kCGImagePropertyOrientationRight;
-        case UIImageOrientationUpMirrored: return kCGImagePropertyOrientationUpMirrored;
-        case UIImageOrientationDownMirrored: return kCGImagePropertyOrientationDownMirrored;
-        case UIImageOrientationLeftMirrored: return kCGImagePropertyOrientationLeftMirrored;
-        case UIImageOrientationRightMirrored: return kCGImagePropertyOrientationRightMirrored;
+- (UIImage *)normalizedImage:(UIImage *)image {
+    if (image.imageOrientation == UIImageOrientationUp) {
+        return image;
     }
+
+    UIGraphicsBeginImageContextWithOptions(image.size, NO, image.scale);
+    [image drawInRect:CGRectMake(0, 0, image.size.width, image.size.height)];
+    UIImage *normalized = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return normalized ?: image;
 }
 
 @end
