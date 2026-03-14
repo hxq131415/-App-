@@ -204,7 +204,7 @@
     UIImage *source = self.originalImage;
     UIColor *bg = self.selectedColor;
     __weak typeof(self) weakSelf = self;
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_USER_INITIATED, 0), ^{
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
         NSError *error = nil;
         UIImage *result = [weakSelf.mattingService processImage:source backgroundColor:bg error:&error];
         dispatch_async(dispatch_get_main_queue(), ^{
