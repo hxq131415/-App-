@@ -3,17 +3,16 @@
 批量生成“职有简历 App”推广文章脚本。
 
 升级点：
-- 支持“更长内容”输出，每篇含多个结构化段落。
+- 默认输出“可直接复制到平台”的排版。
+- 按渠道自动微调结构（小红书/公众号/知乎/B站）。
 - 自动混合写作框架（痛点、方法、案例、清单、行动引导）。
 - 每篇文章包含自然软引导下载语句，避免硬广口吻。
-- 支持按受众、渠道、关键词、文风做定制。
 """
 
 from __future__ import annotations
 
 import argparse
 import random
-import textwrap
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List
@@ -63,12 +62,6 @@ CASE_TEMPLATES = [
     "很多同学改完简历后会反馈：不是经历变多了，而是表达方式变得更“像招聘语言”，因此回复率更高。",
 ]
 
-PUBLISH_HINT_TEMPLATES = [
-    "如果发在{channel}，建议把核心观点拆成 3-5 个小标题，读者更容易快速抓住重点并收藏。",
-    "针对{channel}读者，建议在文末放一个“可复制模板”或“自查清单”，互动率通常更好。",
-    "在{channel}发布时，可以先抛结论再讲过程，这样完读率和转化点击都会更稳定。",
-]
-
 SOFT_CTA_TEMPLATES = [
     "如果你想少走弯路，可以试试【职有简历 App】。它把简历优化流程做成了可执行步骤，从内容到版式都更容易上手。",
     "对时间紧张的朋友来说，【职有简历 App】会更省心：模板、内容建议和排版都能快速完成，先做出一版可投递稿。",
@@ -89,11 +82,11 @@ CHECKLIST_ITEMS = [
     "版式是否保证 15 秒内可快速扫读",
 ]
 
-CHANNEL_STYLE_HINT = {
-    "小红书": "段落短、口语化、可操作清单",
-    "公众号": "结构完整、逻辑更强、信息密度高",
-    "知乎": "观点先行、解释深入、带方法论",
-    "B站": "场景化强、表达轻松、有互动感",
+CHANNEL_TAGS = {
+    "小红书": ["#求职", "#简历", "#职有简历APP", "#找工作"],
+    "公众号": ["#求职方法", "#简历优化", "#职有简历APP"],
+    "知乎": ["#求职", "#简历怎么写", "#职有简历APP"],
+    "B站": ["#求职技巧", "#简历制作", "#职有简历APP"],
 }
 
 
@@ -117,87 +110,129 @@ def _pick_checklist(n: int) -> List[str]:
     return items[:n]
 
 
-def generate_article(spec: ArticleSpec, idx: int, checklist_size: int) -> str:
-    opening = random.choice(OPENING_TEMPLATES).format(keyword=spec.keyword, audience=spec.audience)
-    scene = random.choice(SCENE_TEMPLATES)
-    body = random.choice(BODY_TEMPLATES)
-    method = random.choice(METHOD_TEMPLATES)
-    tip = random.choice(TIP_TEMPLATES)
-    case = random.choice(CASE_TEMPLATES)
-    publish_hint = random.choice(PUBLISH_HINT_TEMPLATES).format(channel=spec.channel)
-    cta = random.choice(SOFT_CTA_TEMPLATES)
-    ending = random.choice(ENDING_TEMPLATES)
-    style_hint = CHANNEL_STYLE_HINT.get(spec.channel, "结构清晰、可读性强")
-    checklist = "\n".join(f"- {item}" for item in _pick_checklist(checklist_size))
+def _build_sections(spec: ArticleSpec, checklist_size: int) -> dict[str, str | List[str]]:
+    return {
+        "title": f"{spec.audience}如何系统提升{spec.keyword}效率（实操版）",
+        "opening": random.choice(OPENING_TEMPLATES).format(keyword=spec.keyword, audience=spec.audience),
+        "scene": random.choice(SCENE_TEMPLATES),
+        "body": random.choice(BODY_TEMPLATES),
+        "method": random.choice(METHOD_TEMPLATES),
+        "tip": random.choice(TIP_TEMPLATES),
+        "case": random.choice(CASE_TEMPLATES),
+        "cta": random.choice(SOFT_CTA_TEMPLATES),
+        "ending": random.choice(ENDING_TEMPLATES),
+        "checklist": _pick_checklist(checklist_size),
+        "tags": CHANNEL_TAGS.get(spec.channel, ["#求职", "#简历"]),
+    }
 
-    title = f"第{idx}篇｜{spec.audience}如何系统提升{spec.keyword}效率（{spec.channel}长文版）"
 
-    content = f"""# {title}
+def _render_markdown(spec: ArticleSpec, sections: dict[str, str | List[str]]) -> str:
+    checklist_lines = "\n".join(f"- {item}" for item in sections["checklist"])
+    tags_line = " ".join(sections["tags"])
+    return (
+        f"# {sections['title']}\n\n"
+        f"{sections['opening']}\n\n{sections['scene']}\n\n"
+        f"## 为什么很多人努力了却没有结果\n"
+        f"{sections['body']}\n\n"
+        "不少人把简历当“经历档案”，而不是“价值说明书”。一份真正有竞争力的简历，"
+        "核心不是写满，而是写准：让对方迅速理解你“适配这个岗位”的理由。\n\n"
+        f"## 可以直接套用的方法\n{sections['method']}\n\n"
+        f"实操建议：{sections['tip']}\n\n"
+        "30 分钟优化动作：\n"
+        "1. 第一层放岗位最关心的能力与成果；\n"
+        "2. 第二层放项目经历与角色贡献；\n"
+        "3. 第三层补充基础信息与辅助经历。\n\n"
+        f"## 案例拆解\n{sections['case']}\n\n"
+        "很多时候，简历改完不只是“好看”，而是招聘方终于能在短时间内识别你的价值点。\n\n"
+        "## 自查清单\n"
+        f"{checklist_lines}\n\n"
+        f"## 软引导\n{sections['cta']}\n\n"
+        f"如果你正在准备{spec.keyword}，建议先完成一版可投递稿，再按岗位做微调。\n\n"
+        f"{sections['ending']}\n\n"
+        f"{tags_line}\n"
+    )
 
-【目标受众】{spec.audience}
-【发布渠道】{spec.channel}
-【文风偏好】{spec.tone}
-【写作提示】{style_hint}
 
-## 01｜你可能正在经历的真实问题
-{opening}
+def _render_copy_ready(spec: ArticleSpec, sections: dict[str, str | List[str]]) -> str:
+    checklist_lines = "\n".join(f"✅ {item}" for item in sections["checklist"])
+    tags_line = " ".join(sections["tags"])
 
-{scene}
+    if spec.channel == "小红书":
+        return (
+            f"【{sections['title']}】\n\n"
+            f"先说结论：{sections['body']}\n\n"
+            f"{sections['opening']}\n{sections['scene']}\n\n"
+            "📌 三步就能开始优化：\n"
+            f"1）{sections['method']}\n"
+            f"2）{sections['tip']}\n"
+            "3）按岗位关键词微调后再投递\n\n"
+            f"📌 一个真实改写思路：{sections['case']}\n\n"
+            "📌 投递前自查：\n"
+            f"{checklist_lines}\n\n"
+            f"{sections['cta']}\n\n"
+            f"{sections['ending']}\n\n"
+            f"{tags_line}"
+        )
 
-## 02｜为什么很多人努力了却没有结果
-{body}
+    if spec.channel == "公众号":
+        return (
+            f"标题：{sections['title']}\n\n"
+            "导语\n"
+            f"{sections['opening']}\n\n"
+            "一、问题为何反复出现\n"
+            f"{sections['scene']}\n{sections['body']}\n\n"
+            "二、可落地的方法\n"
+            f"{sections['method']}\n"
+            f"{sections['tip']}\n\n"
+            "三、案例参考\n"
+            f"{sections['case']}\n\n"
+            "四、自查清单\n"
+            f"{checklist_lines}\n\n"
+            "五、工具建议\n"
+            f"{sections['cta']}\n\n"
+            f"结语：{sections['ending']}\n\n"
+            f"话题：{tags_line}"
+        )
 
-不少人把简历当“经历档案”，而不是“价值说明书”。一份真正有竞争力的简历，核心不是写满，而是写准：让对方迅速理解你“适配这个岗位”的理由。
+    if spec.channel == "知乎":
+        return (
+            f"问题：{spec.audience}如何提升{spec.keyword}效率？\n\n"
+            f"我的结论是：{sections['body']}\n\n"
+            "下面按“问题—方法—案例—落地”展开：\n\n"
+            f"1）问题本质\n{sections['opening']}\n{sections['scene']}\n\n"
+            f"2）方法框架\n{sections['method']}\n{sections['tip']}\n\n"
+            f"3）案例说明\n{sections['case']}\n\n"
+            f"4）自查清单\n{checklist_lines}\n\n"
+            f"最后补一句：{sections['cta']}\n\n"
+            f"{sections['ending']}\n\n"
+            f"相关话题：{tags_line}"
+        )
 
-## 03｜可直接套用的方法框架
-{method}
+    return _render_markdown(spec, sections)
 
-实操建议：{tip}
 
-你可以先用 30 分钟把现有简历做一次“信息分层”：
-1. 第一层放岗位最关心的能力与成果；
-2. 第二层放项目经历与角色贡献；
-3. 第三层再补充基础信息与辅助经历。
-
-## 04｜案例拆解（更容易理解）
-{case}
-
-很多时候，简历改完不只是“好看”，而是招聘方终于能在短时间内识别你的价值点，这才是拿到更多面试机会的关键。
-
-## 05｜发布与转化建议（适配渠道）
-{publish_hint}
-
-文末可放一个“求职简历自查清单”，帮助读者立刻行动：
-{checklist}
-
-## 06｜软引导：如何更快做出可投递版本
-很多人并不缺能力，而是缺一个“把能力表达出来”的工具与方法。{cta}
-
-如果你正在准备{spec.keyword}，可以先用工具完成第一版，再结合目标岗位进行微调，这样既不拖延，也更容易持续优化。
-
-## 07｜结尾
-{ending}
-"""
-    return textwrap.dedent(content).strip() + "\n"
+def generate_article(spec: ArticleSpec, checklist_size: int, copy_ready: bool) -> str:
+    sections = _build_sections(spec, checklist_size)
+    if copy_ready:
+        return _render_copy_ready(spec, sections).strip() + "\n"
+    return _render_markdown(spec, sections).strip() + "\n"
 
 
 def save_articles(output_dir: Path, articles: List[str]) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     for i, article in enumerate(articles, start=1):
-        file_path = output_dir / f"promo_article_{i:03d}.md"
+        file_path = output_dir / f"promo_article_{i:03d}.txt"
         file_path.write_text(article, encoding="utf-8")
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="批量生成职有简历 App 推广文章（长文版）")
+    parser = argparse.ArgumentParser(description="批量生成职有简历 App 推广文章（平台可直接复制版）")
     parser.add_argument("--count", type=int, default=10, help="生成文章数量（默认 10）")
     parser.add_argument("--output-dir", default="generated_articles", help="输出目录（默认 generated_articles）")
-    parser.add_argument(
-        "--checklist-size",
-        type=int,
-        default=4,
-        help="每篇文章自查清单条目数（默认 4，最大 5）",
-    )
+    parser.add_argument("--checklist-size", type=int, default=4, help="每篇文章自查清单条目数（默认 4，最大 5）")
+    parser.add_argument("--copy-ready", dest="copy_ready", action="store_true", help="输出平台可直接复制排版")
+    parser.add_argument("--no-copy-ready", dest="copy_ready", action="store_false", help="关闭可复制排版，改为 Markdown 长文")
+    parser.set_defaults(copy_ready=True)
     parser.add_argument(
         "--audiences",
         nargs="+",
@@ -222,7 +257,7 @@ def parse_args() -> argparse.Namespace:
         default=["专业可信", "真诚陪伴", "轻松实用"],
         help="文风列表（空格分隔）",
     )
-    parser.add_argument("--seed", type=int, default=42, help="随机种子（默认 42，保证可复现）")
+    parser.add_argument("--seed", type=int, default=42, help="随机种子（默认 42）")
     return parser.parse_args()
 
 
@@ -234,19 +269,11 @@ def main() -> None:
         raise ValueError(f"--checklist-size 必须在 1 到 {len(CHECKLIST_ITEMS)} 之间")
 
     random.seed(args.seed)
-
-    specs = normalize_specs(
-        audiences=args.audiences,
-        channels=args.channels,
-        keywords=args.keywords,
-        tones=args.tones,
-        count=args.count,
-    )
-
-    articles = [generate_article(spec, i + 1, args.checklist_size) for i, spec in enumerate(specs)]
+    specs = normalize_specs(args.audiences, args.channels, args.keywords, args.tones, args.count)
+    articles = [generate_article(spec, args.checklist_size, args.copy_ready) for spec in specs]
     save_articles(Path(args.output_dir), articles)
 
-    print(f"已生成 {len(articles)} 篇长文推广文章，输出目录：{args.output_dir}")
+    print(f"已生成 {len(articles)} 篇可复制发布文章，输出目录：{args.output_dir}")
 
 
 if __name__ == "__main__":
